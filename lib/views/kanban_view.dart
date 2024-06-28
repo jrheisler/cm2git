@@ -29,8 +29,9 @@ import 'kanban_card_dialog.dart';
 import 'kanban_column_dialog.dart';
 
 class KanbanBoardScreen extends StatefulWidget {
-
-  const KanbanBoardScreen({super.key, });
+  const KanbanBoardScreen({
+    super.key,
+  });
 
   @override
   _KanbanBoardScreenState createState() => _KanbanBoardScreenState();
@@ -39,7 +40,8 @@ class KanbanBoardScreen extends StatefulWidget {
 class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   late KanbanBoard kanbanBoard;
   final ScrollController _scrollController = ScrollController();
-  final GitHubService _gitHubService = GitHubService(retrieveString(singletonData.cm2git),  'jrheisler',  'cm2git');
+  final GitHubService _gitHubService = GitHubService(
+      retrieveString(singletonData.cm2git), 'jrheisler', 'cm2git');
   bool move = false;
 
   @override
@@ -47,19 +49,19 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     _scrollController.dispose();
     super.dispose();
   }
-  
+
   @override
   void initState() {
-     super.initState();
-     final kanbanData = LocalStorageHelper.getValue('kanban_board');
+    super.initState();
+    final kanbanData = LocalStorageHelper.getValue('kanban_board');
 
-     if (kanbanData != null) {
-       kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData));
-     } else {
-       final kanbanBoardJson = getKanbanBoardJson();
-       kanbanBoard = KanbanBoard.fromJson(kanbanBoardJson['kanban_board']);
-     }
-   }
+    if (kanbanData != null) {
+      kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData));
+    } else {
+      final kanbanBoardJson = getKanbanBoardJson();
+      kanbanBoard = KanbanBoard.fromJson(kanbanBoardJson['kanban_board']);
+    }
+  }
 
   void _dragOnOff() {
     setState(() {
@@ -79,7 +81,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                   .firstWhere((column) => column.name == columnName)
                   .cards
                   .add(card);
-              LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
             });
           },
         );
@@ -104,13 +107,15 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                   .firstWhere((column) => column.name == updatedCard.status)
                   .cards
                   .add(updatedCard);
-              LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
             });
           },
         );
       },
     );
   }
+
   void _addColumn() {
     showDialog(
       context: context,
@@ -119,13 +124,15 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           onSave: (column) {
             setState(() {
               kanbanBoard.columns.add(column);
-              LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
             });
           },
           onDelete: (deletedColumn) {
             setState(() {
               kanbanBoard.columns.remove(deletedColumn);
-              LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
             });
           },
         );
@@ -143,13 +150,15 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             setState(() {
               int index = kanbanBoard.columns.indexOf(column);
               kanbanBoard.columns[index] = updatedColumn;
-              LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
             });
           },
           onDelete: (deletedColumn) {
             setState(() {
               kanbanBoard.columns.remove(deletedColumn);
-              LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
             });
           },
         );
@@ -166,14 +175,16 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
       // Add the card to the new column
       targetColumn.cards.add(card);
-      LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+      LocalStorageHelper.saveValue(
+          'kanban_board', jsonEncode(kanbanBoard.toJson()));
     });
   }
 
   void _deleteColumn(KanbanColumn column) {
     setState(() {
       kanbanBoard.columns.removeWhere((col) => col.id == column.id);
-      LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+      LocalStorageHelper.saveValue(
+          'kanban_board', jsonEncode(kanbanBoard.toJson()));
     });
   }
 
@@ -190,6 +201,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       },
     );
   }
+
   Future<void> _refreshFiles() async {
     try {
       final List<GitCommit> commits = await _gitHubService.getCommits();
@@ -199,13 +211,14 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             card.files.clear();
             for (var commit in commits) {
               if (commit.commit.message.contains('${card.id}')) {
-                 card.files.add(commit.commit);
-                 card.sha = commit.sha;
+                card.files.add(commit.commit);
+                card.sha = commit.sha;
               }
             }
           }
         }
-        LocalStorageHelper.saveValue('kanban_board', jsonEncode(kanbanBoard.toJson()));
+        LocalStorageHelper.saveValue(
+            'kanban_board', jsonEncode(kanbanBoard.toJson()));
       });
     } catch (e) {
       print('Failed to load files: $e');
@@ -228,16 +241,23 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             onPressed: _manageColumns,
             tooltip: 'Manage Columns',
           ),
-          IconButton(
-            icon: const Icon(Icons.move_up_sharp, ),
-            onPressed: _dragOnOff,
-            tooltip: move ? 'Turn Drag/Drop off': 'Turn Drag/Drop on',
+
+          SizedBox(
+            width: 40,
+            child: Tooltip(
+              message: move ? 'Turn Drag/Drop off' : 'Turn Drag/Drop on',
+              child: Checkbox(
+                  value: move,
+                  onChanged: (b) {
+                    setState(() {
+                      move = b!;
+                    });
+                  }),
+            ),
           ),
-          const SizedBox(width: 20,),
-          /*IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addColumn,
-          ),*/
+          const SizedBox(
+            width: 20,
+          ),
         ],
       ),
       body: Scrollbar(
@@ -333,7 +353,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                               }
                             }).toList(),
                           );
-
                         },
                       ),
                     ),
@@ -346,8 +365,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       ),
     );
   }
-
-
 }
 
 class KanbanColumnWidget extends StatelessWidget {

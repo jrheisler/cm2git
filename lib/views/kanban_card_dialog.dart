@@ -145,13 +145,14 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
           },
           child: const Text('Save'),
         ),
-    if (widget.card!.files.isNotEmpty)
-      ElevatedButton(
-          onPressed: () async {
-            await _fetchAndShowCommitDetails(widget.card!);
-          },
-          child:  Text('Files'),
-        ),
+        if (widget.card != null)
+          if (widget.card!.files.isNotEmpty)
+            ElevatedButton(
+              onPressed: () async {
+                await _fetchAndShowCommitDetails(widget.card!);
+              },
+              child: Text('Files'),
+            ),
       ],
     );
   }
