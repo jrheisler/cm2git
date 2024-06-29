@@ -302,7 +302,7 @@ class GitCommit {
     return GitCommit(
       sha: json['sha'],
       nodeId: json['node_id'],
-      commit: CommitDetail.fromJson(json['commit']),
+      commit: CommitDetail.fromJson(json['commit'], json['sha']),
       url: json['url'],
       htmlUrl: json['html_url'],
       commentsUrl: json['comments_url'],
@@ -323,6 +323,7 @@ class CommitDetail {
   String url;
   int commentCount;
   Verification verification;
+  String sha;
 
   CommitDetail({
     required this.author,
@@ -332,9 +333,10 @@ class CommitDetail {
     required this.url,
     required this.commentCount,
     required this.verification,
+    required this.sha,
   });
 
-  factory CommitDetail.fromJson(Map<String, dynamic> json) {
+  factory CommitDetail.fromJson(Map<String, dynamic> json, sha) {
     return CommitDetail(
       author: Author.fromJson(json['author']),
       committer: Committer.fromJson(json['committer']),
@@ -343,6 +345,7 @@ class CommitDetail {
       url: json['url'],
       commentCount: json['comment_count'],
       verification: Verification.fromJson(json['verification']),
+      sha: sha,
     );
   }
 }

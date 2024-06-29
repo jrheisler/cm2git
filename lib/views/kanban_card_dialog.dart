@@ -48,12 +48,12 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     );
   }
 
-  Future<void> _fetchAndShowCommitDetails(KanbanCard card) async {
+  Future<void> _fetchAndShowCommitDetails(String inSha) async {
     try {
       // Assuming you have the necessary variables for owner, repo, sha, and token
       String owner = singletonData.username;
       String repo = singletonData.repo;
-      String sha = card.sha;
+      String sha = inSha;
       String token = retrieveString(singletonData.cm2git);
 
       GitHubCommitDetails commitDetails =
@@ -91,6 +91,12 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                   ),
                 ),
                 Text("Message: ${commit.message}"),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _fetchAndShowCommitDetails(commit.sha);
+                  },
+                  child: const Text('Files'),
+                ),
               ],
             ),
           );
@@ -159,14 +165,6 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
           },
           child: const Text('Save'),
         ),
-        if (widget.card != null)
-          if (widget.card!.files.isNotEmpty)
-            ElevatedButton(
-              onPressed: () async {
-                await _fetchAndShowCommitDetails(widget.card!);
-              },
-              child: const Text('Files'),
-            ),
       ],
     );
   }
