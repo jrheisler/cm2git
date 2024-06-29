@@ -70,24 +70,32 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       return const Text('No Commits');
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: widget.card!.files.map((commit) {
-        return ListTile(
-          title: Text(commit.message),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Author: ${commit.author.name}"),
-              Text("Date: ${commit.author.date}"),
-              GestureDetector(
-                  onTap: ()=>launchUrl(commit.url),
-                  child: Text("URL Click to Open: ${commit.url}")),
-              Text("Message: ${commit.message}"),
-            ],
-          ),
-        );
-      }).toList(),
+    return Flexible(
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: widget.card!.files.length,
+        itemBuilder: (context, index) {
+          final commit = widget.card!.files[index];
+          return ListTile(
+            title: Text(commit.message),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Author: ${commit.author.name}"),
+                Text("Date: ${commit.author.date}"),
+                GestureDetector(
+                  onTap: () => launchUrl(commit.url),
+                  child: Text(
+                    "URL Click to Open: ${commit.url}",
+                    style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                  ),
+                ),
+                Text("Message: ${commit.message}"),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -96,26 +104,30 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     return AlertDialog(
       backgroundColor: singletonData.kPrimaryColor,
       title: Text(widget.card == null ? 'Add Card' : 'Edit Card'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Title'),
+      content: Container(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
+              TextField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              TextField(
+                controller: _assigneeController,
+                decoration: const InputDecoration(labelText: 'Assignee'),
+              ),
+              const SizedBox(height: 20),
+              const Text('Commit Details', style: TextStyle(fontWeight: FontWeight.bold)),
+              _buildCommitDetails(),
+            ],
           ),
-          TextField(
-            controller: _descriptionController,
-            decoration: const InputDecoration(labelText: 'Description'),
-          ),
-          TextField(
-            controller: _assigneeController,
-            decoration: const InputDecoration(labelText: 'Assignee'),
-          ),
-          const SizedBox(height: 20),
-          const Text('Commit Details',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          _buildCommitDetails(),
-        ],
+        ),
       ),
       actions: [
         IconButton(
@@ -153,12 +165,15 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
               onPressed: () async {
                 await _fetchAndShowCommitDetails(widget.card!);
               },
-              child: Text('Files'),
+              child: const Text('Files'),
             ),
       ],
     );
   }
+
+
 }
+
 
 /*
 import 'package:flutter/material.dart';

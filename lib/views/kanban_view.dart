@@ -61,13 +61,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       final kanbanBoardJson = getKanbanBoardJson();
       kanbanBoard = KanbanBoard.fromJson(kanbanBoardJson['kanban_board']);
     }
+    _refreshFiles();
   }
 
-  void _dragOnOff() {
-    setState(() {
-      move = !move;
-    });
-  }
 
   void _addCard(String columnName) {
     showDialog(

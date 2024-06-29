@@ -265,7 +265,6 @@ class GitHubService {
       Uri.parse(url),
       headers: {'Authorization': 'token $_token'},
     );
-    print(_token);
     if (response.statusCode == 200) {
       final List<dynamic> commitList = json.decode(response.body);
       return commitList.map((commit) => GitCommit.fromJson(commit)).toList();
