@@ -80,7 +80,9 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
             children: [
               Text("Author: ${commit.author.name}"),
               Text("Date: ${commit.author.date}"),
-              Text("URL: ${commit.url}"),
+              GestureDetector(
+                  onTap: ()=>launchUrl(commit.url),
+                  child: Text("URL Click to Open: ${commit.url}")),
               Text("Message: ${commit.message}"),
             ],
           ),

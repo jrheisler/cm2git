@@ -217,6 +217,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             }
           }
         }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Refreshed')),
+        );
         LocalStorageHelper.saveValue(
             'kanban_board', jsonEncode(kanbanBoard.toJson()));
       });
@@ -261,6 +264,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         ],
       ),
       body: Scrollbar(
+        thickness: 12,
         controller: _scrollController,
         thumbVisibility: true,
         child: SingleChildScrollView(
