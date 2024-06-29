@@ -57,7 +57,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       String token = retrieveString(singletonData.cm2git);
 
       GitHubCommitDetails commitDetails =
-          await fetchCommitDetails(owner, repo, sha, token);
+      await fetchCommitDetails(owner, repo, sha, token);
       _showCommitDetailsDialog(commitDetails);
     } catch (e) {
       print('Error fetching commit details: $e');
