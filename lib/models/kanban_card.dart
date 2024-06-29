@@ -7,7 +7,7 @@ class KanbanCard {
   String status;
   String assignee;
   String sha;
-  List<CommitDetail> files;
+  List<dynamic> files;
 
   KanbanCard({
     required this.id,
@@ -27,7 +27,7 @@ class KanbanCard {
       status: json['status'],
       assignee: json['assignee'],
       sha: json['sha'] ?? '',
-      //files: json['files'] != null ? List<CommitDetail>.from(json['files']) : [],
+      files: [],
     );
   }
 

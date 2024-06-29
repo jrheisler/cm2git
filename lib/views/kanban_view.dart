@@ -72,7 +72,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       builder: (context) {
         return KanbanCardDialog(
           columnName: columnName,
-          onDelete: (){},
+          onDelete: (){
+            Navigator.of(context).pop();
+          },
           onSave: (card) {
             setState(() {
               kanbanBoard.columns
@@ -105,6 +107,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 'kanban_board',
                 jsonEncode(kanbanBoard.toJson()),
               );
+              Navigator.of(context).pop();
             });
             setState(() {});
           },
