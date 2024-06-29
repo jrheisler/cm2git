@@ -58,8 +58,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     if (kanbanData != null) {
       kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData));
     } else {
-      final kanbanBoardJson = getKanbanBoardJson();
-      kanbanBoard = KanbanBoard.fromJson(kanbanBoardJson['kanban_board']);
+      kanbanBoard = KanbanBoard(columns: [KanbanColumn(id: 1, name: 'Product Backlog', cards: [KanbanCard(id: 101, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')])]);
+      //final kanbanBoardJson = getKanbanBoardJson();
+      //kanbanBoard = KanbanBoard.fromJson(kanbanBoardJson['kanban_board']);
     }
     _refreshFiles();
   }
@@ -71,6 +72,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       builder: (context) {
         return KanbanCardDialog(
           columnName: columnName,
+          onDelete: (){},
           onSave: (card) {
             setState(() {
               kanbanBoard.columns
@@ -93,6 +95,19 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         return KanbanCardDialog(
           card: card,
           columnName: card.status,
+          onDelete: () async {
+            await showDeleteDialog(context, () {
+              kanbanBoard.columns
+                  .firstWhere((column) => column.name == card.status)
+                  .cards
+                  .removeWhere((c) => c.id == card.id);
+              LocalStorageHelper.saveValue(
+                'kanban_board',
+                jsonEncode(kanbanBoard.toJson()),
+              );
+            });
+            setState(() {});
+          },
           onSave: (updatedCard) {
             setState(() {
               kanbanBoard.columns
@@ -312,7 +327,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                                     child: KanbanCardWidget(
                                       card: card,
                                       onEdit: () {},
-                                      onDelete: () {},
                                     ),
                                   ),
                                   childWhenDragging: Container(),
@@ -321,16 +335,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                                     onEdit: () {
                                       _editCard(card);
                                     },
-                                    onDelete: () async {
-                                      await showDeleteDialog(context, () {
-                                        column.cards.remove(card);
-                                        LocalStorageHelper.saveValue(
-                                          'kanban_board',
-                                          jsonEncode(kanbanBoard.toJson()),
-                                        );
-                                      });
-                                      setState(() {});
-                                    },
                                   ),
                                 );
                               } else {
@@ -338,16 +342,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                                   card: card,
                                   onEdit: () {
                                     _editCard(card);
-                                  },
-                                  onDelete: () async {
-                                    await showDeleteDialog(context, () {
-                                      column.cards.remove(card);
-                                      LocalStorageHelper.saveValue(
-                                        'kanban_board',
-                                        jsonEncode(kanbanBoard.toJson()),
-                                      );
-                                    });
-                                    setState(() {});
                                   },
                                 );
                               }
@@ -426,7 +420,6 @@ class KanbanColumnWidget extends StatelessWidget {
                       child: KanbanCardWidget(
                         card: card,
                         onEdit: () {},
-                        onDelete: () {},
                       ),
                     ),
                   ),
@@ -434,7 +427,6 @@ class KanbanColumnWidget extends StatelessWidget {
                   child: KanbanCardWidget(
                     card: card,
                     onEdit: () => onEditCard(card),
-                    onDelete: () => onDeleteCard(card),
                   ),
                 );
               },
@@ -470,10 +462,9 @@ class KanbanColumnWidget extends StatelessWidget {
 class KanbanCardWidget extends StatelessWidget {
   final KanbanCard card;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   KanbanCardWidget(
-      {required this.card, required this.onEdit, required this.onDelete});
+      {required this.card, required this.onEdit});
 
   void _copyToClipboard(BuildContext context) {
     final text = 'Card ID: ${card.id}';
@@ -513,10 +504,7 @@ class KanbanCardWidget extends StatelessWidget {
                   icon: const Icon(Icons.edit),
                   onPressed: onEdit,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: onDelete,
-                ),
+
               ],
             ),
           ],
@@ -548,15 +536,13 @@ Map<String, dynamic> getKanbanBoardJson() {
               "description": "Investigate the integration with external API services",
               "assignee": "Alice",
               "status": "PRODUCT BACKLOG",
-              "filesChanged": []
             },
             {
               "id": 102,
               "title": "Design Database Schema",
               "description": "Create initial database schema for the project",
               "assignee": "Bob",
-              "status": "PRODUCT BACKLOG",
-              "filesChanged": []
+              "status": "PRODUCT BACKLOG",              
             }
           ]
         },
@@ -569,8 +555,7 @@ Map<String, dynamic> getKanbanBoardJson() {
               "title": "Setup Development Environment",
               "description": "Install and configure development tools and libraries",
               "assignee": "Charlie",
-              "status": "SPRINT BACKLOG",
-              "filesChanged": []
+              "status": "SPRINT BACKLOG",              
             },
             {
               "id": 202,
@@ -578,7 +563,6 @@ Map<String, dynamic> getKanbanBoardJson() {
               "description": "Write detailed user stories for the upcoming sprint",
               "assignee": "Dave",
               "status": "SPRINT BACKLOG",
-              "filesChanged": []
             }
           ]
         },
@@ -591,23 +575,14 @@ Map<String, dynamic> getKanbanBoardJson() {
               "title": "Implement Login Feature",
               "description": "Develop the login feature for the application",
               "assignee": "Eve",
-              "status": "WIP",
-              "filesChanged": [
-                "lib/screens/login_screen.dart",
-                "lib/widgets/login_form.dart",
-                "lib/services/auth_service.dart"
-              ]
+              "status": "WIP",              
             },
             {
               "id": 302,
               "title": "Setup CI/CD Pipeline",
               "description": "Configure continuous integration and deployment",
               "assignee": "Frank",
-              "status": "WIP",
-              "filesChanged": [
-                ".github/workflows/ci.yml",
-                "scripts/deploy.sh"
-              ]
+              "status": "WIP",              
             }
           ]
         },
@@ -620,18 +595,14 @@ Map<String, dynamic> getKanbanBoardJson() {
               "title": "Write Unit Tests for Authentication",
               "description": "Develop unit tests for the authentication module",
               "assignee": "Grace",
-              "status": "TESTING",
-              "filesChanged": [
-                "test/auth_test.dart"
-              ]
+              "status": "TESTING",              
             },
             {
               "id": 402,
               "title": "Test Payment Gateway Integration",
               "description": "Perform end-to-end testing for payment gateway",
               "assignee": "Hank",
-              "status": "TESTING",
-              "filesChanged": []
+              "status": "TESTING",              
             }
           ]
         },
@@ -644,22 +615,14 @@ Map<String, dynamic> getKanbanBoardJson() {
               "title": "Complete Project Setup",
               "description": "Finish initial project setup and configuration",
               "assignee": "Ivy",
-              "status": "DONE",
-              "filesChanged": [
-                "README.md",
-                "setup/config.json"
-              ]
+              "status": "DONE",              
             },
             {
               "id": 502,
               "title": "Deploy First Version",
               "description": "Deploy the first version of the application to production",
               "assignee": "Jack",
-              "status": "DONE",
-              "filesChanged": [
-                "scripts/deploy.sh",
-                "docker/Dockerfile"
-              ]
+              "status": "DONE",              
             }
           ]
         }

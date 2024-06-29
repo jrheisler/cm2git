@@ -315,6 +315,110 @@ class GitCommit {
   }
 }
 
+class Author {
+  String name;
+  String email;
+  String date;
+
+  Author({
+    required this.name,
+    required this.email,
+    required this.date,
+  });
+
+  factory Author.fromJson(Map<String, dynamic> json) {
+    return Author(
+      name: json['name'],
+      email: json['email'],
+      date: json['date'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'email': email,
+    'date': date,
+  };
+}
+
+class Committer {
+  String name;
+  String email;
+  String date;
+
+  Committer({
+    required this.name,
+    required this.email,
+    required this.date,
+  });
+
+  factory Committer.fromJson(Map<String, dynamic> json) {
+    return Committer(
+      name: json['name'],
+      email: json['email'],
+      date: json['date'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'email': email,
+    'date': date,
+  };
+}
+
+class Tree {
+  String sha;
+  String url;
+
+  Tree({
+    required this.sha,
+    required this.url,
+  });
+
+  factory Tree.fromJson(Map<String, dynamic> json) {
+    return Tree(
+      sha: json['sha'],
+      url: json['url'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'sha': sha,
+    'url': url,
+  };
+}
+
+class Verification {
+  bool verified;
+  String reason;
+  String? signature;
+  String? payload;
+
+  Verification({
+    required this.verified,
+    required this.reason,
+    this.signature,
+    this.payload,
+  });
+
+  factory Verification.fromJson(Map<String, dynamic> json) {
+    return Verification(
+      verified: json['verified'],
+      reason: json['reason'],
+      signature: json['signature'],
+      payload: json['payload'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'verified': verified,
+    'reason': reason,
+    'signature': signature,
+    'payload': payload,
+  };
+}
+
 class CommitDetail {
   Author author;
   Committer committer;
@@ -357,110 +461,6 @@ class CommitDetail {
       commentCount: json['comment_count'],
       verification: Verification.fromJson(json['verification']),
       sha: sha,
-    );
-  }
-}
-
-class Author {
-  String name;
-  String email;
-  String date;
-
-  Author({
-    required this.name,
-    required this.email,
-    required this.date,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'email': email,
-    'date': date,
-  };
-
-  factory Author.fromJson(Map<String, dynamic> json) {
-    return Author(
-      name: json['name'],
-      email: json['email'],
-      date: json['date'],
-    );
-  }
-}
-
-class Committer {
-  String name;
-  String email;
-  String date;
-
-  Committer({
-    required this.name,
-    required this.email,
-    required this.date,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'email': email,
-    'date': date,
-  };
-
-  factory Committer.fromJson(Map<String, dynamic> json) {
-    return Committer(
-      name: json['name'],
-      email: json['email'],
-      date: json['date'],
-    );
-  }
-}
-
-class Tree {
-  String sha;
-  String url;
-
-  Tree({
-    required this.sha,
-    required this.url,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'sha': sha,
-    'url': url,
-  };
-
-  factory Tree.fromJson(Map<String, dynamic> json) {
-    return Tree(
-      sha: json['sha'],
-      url: json['url'],
-    );
-  }
-}
-
-class Verification {
-  bool verified;
-  String reason;
-  String? signature;
-  String? payload;
-
-  Verification({
-    required this.verified,
-    required this.reason,
-    this.signature,
-    this.payload,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'verified': verified,
-    'reason': reason,
-    'signature': signature,
-    'payload': payload,
-  };
-
-  factory Verification.fromJson(Map<String, dynamic> json) {
-    return Verification(
-      verified: json['verified'],
-      reason: json['reason'],
-      signature: json['signature'],
-      payload: json['payload'],
     );
   }
 }

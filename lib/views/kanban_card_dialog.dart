@@ -11,8 +11,9 @@ class KanbanCardDialog extends StatefulWidget {
   final KanbanCard? card;
   final String columnName;
   final Function(KanbanCard) onSave;
+  final VoidCallback onDelete;
 
-  KanbanCardDialog({this.card, required this.columnName, required this.onSave});
+  KanbanCardDialog({this.card, required this.columnName, required this.onSave, required this.onDelete});
 
   @override
   _KanbanCardDialogState createState() => _KanbanCardDialogState();
@@ -97,6 +98,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                   },
                   child: const Text('Files'),
                 ),
+
               ],
             ),
           );
@@ -164,6 +166,10 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
             Navigator.of(context).pop();
           },
           child: const Text('Save'),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: widget.onDelete,
         ),
       ],
     );

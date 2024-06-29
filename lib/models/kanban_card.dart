@@ -27,7 +27,7 @@ class KanbanCard {
       status: json['status'],
       assignee: json['assignee'],
       sha: json['sha'] ?? '',
-      files: json['files'] != null ? List<CommitDetail>.from(json['files']) : [],
+      //files: json['files'] != null ? List<CommitDetail>.from(json['files']) : [],
     );
   }
 
