@@ -22,6 +22,7 @@ import '../models/kanban_card.dart';
 import '../models/kanban_column.dart';
 import '../services/git_services.dart';
 import '../services/local_storage_helper.dart';
+import '../services/mili.dart';
 import '../services/singleton_data.dart';
 import 'column_management_dialog.dart';
 import 'delete_dialog.dart';
@@ -55,13 +56,24 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     super.initState();
     final kanbanData = LocalStorageHelper.getValue('kanban_board');
 
-    if (kanbanData != null) {
-      kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData));
-    } else {
-      kanbanBoard = KanbanBoard(columns: [KanbanColumn(id: 1, name: 'Product Backlog', cards: [KanbanCard(id: 101, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')])]);
-      //final kanbanBoardJson = getKanbanBoardJson();
-      //kanbanBoard = KanbanBoard.fromJson(kanbanBoardJson['kanban_board']);
+    try {
+      kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData!));
+    } catch (e) {
+      kanbanBoard = KanbanBoard(columns: [
+        KanbanColumn(id: 1, name: 'Product Backlog', cards: [
+          KanbanCard(id: 100, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha'),
+          KanbanCard(id: 101, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')
+        ]),
+        KanbanColumn(id: 2, name: 'Sprint Backlog', cards: [
+          KanbanCard(id: 200, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha'),
+          KanbanCard(id: 201, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')
+        ]),
+        KanbanColumn(id: 3, name: 'WIP', cards: [KanbanCard(id: 301, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')]),
+        KanbanColumn(id: 4, name: 'Testing', cards: [KanbanCard(id: 401, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')]),
+        KanbanColumn(id: 5, name: 'Done', cards: [KanbanCard(id: 501, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')])
+      ]);
     }
+
     _refreshFiles();
   }
 
@@ -99,10 +111,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           columnName: card.status,
           onDelete: () async {
             await showDeleteDialog(context, () {
-              kanbanBoard.columns
-                  .firstWhere((column) => column.name == card.status)
-                  .cards
-                  .removeWhere((c) => c.id == card.id);
+              for (var col in kanbanBoard.columns) {
+                col.cards.remove(card);
+              }
               LocalStorageHelper.saveValue(
                 'kanban_board',
                 jsonEncode(kanbanBoard.toJson()),
@@ -500,6 +511,7 @@ class KanbanCardWidget extends StatelessWidget {
             Text('Description: ${card.description}'),
             Text('Assignee: ${card.assignee}'),
             Text('Status: ${card.status}'),
+            Text('Create Date: ${convertMilliToDateTime(card.id)}'),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

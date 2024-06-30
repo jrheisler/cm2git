@@ -4,6 +4,7 @@ import '../main.dart';
 import '../models/kanban_card.dart';
 import '../services/email.dart';
 import '../services/git_hub_commit_details.dart';
+import '../services/mili.dart';
 import '../services/singleton_data.dart';
 import 'commit_details_dialog.dart';
 
@@ -130,6 +131,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                 controller: _assigneeController,
                 decoration: const InputDecoration(labelText: 'Assignee'),
               ),
+              widget.card != null ? Text('Create Date: ${convertMilliToDateTime(widget.card!.id)}'): const SizedBox.shrink(),
               const SizedBox(height: 20),
               const Text('Commit Details', style: TextStyle(fontWeight: FontWeight.bold)),
               _buildCommitDetails(),
