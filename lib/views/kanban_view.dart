@@ -59,19 +59,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     try {
       kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData!));
     } catch (e) {
-      kanbanBoard = KanbanBoard(columns: [
-        KanbanColumn(id: 1, name: 'Product Backlog', cards: [
-          KanbanCard(id: 100, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha'),
-          KanbanCard(id: 101, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')
-        ]),
-        KanbanColumn(id: 2, name: 'Sprint Backlog', cards: [
-          KanbanCard(id: 200, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha'),
-          KanbanCard(id: 201, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')
-        ]),
-        KanbanColumn(id: 3, name: 'WIP', cards: [KanbanCard(id: 301, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')]),
-        KanbanColumn(id: 4, name: 'Testing', cards: [KanbanCard(id: 401, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')]),
-        KanbanColumn(id: 5, name: 'Done', cards: [KanbanCard(id: 501, title: 'Sample', description: 'description', status: 'Product Backlog', assignee: 'assignee', sha: 'sha')])
-      ]);
+      kanbanBoard = KanbanBoard.fromData();
     }
 
     _refreshFiles();
@@ -233,7 +221,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       setState(() {
         for (var column in kanbanBoard.columns) {
           for (var card in column.cards) {
-            card.files.clear();
+            card.files = [];
             for (var commit in commits) {
               if (commit.commit.message.contains('${card.id}')) {
                 card.files.add(commit.commit);

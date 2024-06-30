@@ -93,6 +93,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                   ),
                 ),
                 Text("Message: ${commit.message}"),
+                const SizedBox(height: 40,),
                 ElevatedButton(
                   onPressed: () async {
                     await _fetchAndShowCommitDetails(commit.sha);

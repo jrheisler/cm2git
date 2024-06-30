@@ -1,5 +1,5 @@
 import 'package:cm_2_git/models/kanban_card.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 void launchEmail(KanbanCard card) async {
   final Uri params = Uri(
@@ -10,16 +10,16 @@ void launchEmail(KanbanCard card) async {
   );
 
   var url = params.toString();
-  if (await canLaunch(url)) {
-    await launch(url);
+  if (await canLaunchUrlString(url)) {
+    await launchUrlString(url);
   } else {
     print('Could not launch $url');
   }
 }
 
 void launchUrl(String url) async {
-  if (await canLaunch(url)) {
-    await launch(url);
+  if (await canLaunchUrlString(url)) {
+    await launchUrlString(url);
   } else {
     print('Could not launch $url');
   }

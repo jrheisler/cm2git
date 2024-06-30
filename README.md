@@ -1,16 +1,18 @@
 # cm_2_git
+Goals:
 
-A new Flutter project.
+1. Create a system to allow students to create change packages as Kanban Cards 
+a. CRUD Cards
+b. Attach Commits to Cards, and the files that change in a Git repo 
+c. Track the Card through a Kanban
 
-## Getting Started
+2. Create an interactive Kanban 
+a. With a variable number of columns 
+b. Using drag and drop 
+c. Column level limits
 
-This project is a starting point for a Flutter application.
+3. Lists of Users 
+a. Full CRUD
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+4. Local Data 
+5. Settings for the user to tie to a Git Repo
