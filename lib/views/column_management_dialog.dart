@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../models/kanban_column.dart';
 
-class ColumnManagementDialog extends StatelessWidget {
+class ColumnManagementDialog extends StatefulWidget {
   final List<KanbanColumn> columns;
   final VoidCallback onAddColumn;
   final Function(KanbanColumn) onEditColumn;
@@ -17,6 +17,11 @@ class ColumnManagementDialog extends StatelessWidget {
   });
 
   @override
+  State<ColumnManagementDialog> createState() => _ColumnManagementDialogState();
+}
+
+class _ColumnManagementDialogState extends State<ColumnManagementDialog> {
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: singletonData.kPrimaryColor,
@@ -25,25 +30,28 @@ class ColumnManagementDialog extends StatelessWidget {
         width: double.maxFinite,
         child: ListView.builder(
           shrinkWrap: true,
-          itemCount: columns.length,
+          itemCount: widget.columns.length,
           itemBuilder: (context, index) {
-            final column = columns[index];
+            final column = widget.columns[index];
             return ListTile(
               title: Text(column.name),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
+                  /*IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
                       Navigator.of(context).pop();
-                      onEditColumn(column);
+                      widget.onEditColumn(column);
+
                     },
-                  ),
+                  ),*/
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () {
-                      onDeleteColumn(column);
+                      setState(() {
+                        widget.onDeleteColumn(column);
+                      });
                     },
                   ),
                 ],
@@ -54,7 +62,10 @@ class ColumnManagementDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: onAddColumn,
+          onPressed: () {
+            Navigator.of(context).pop();
+            widget.onAddColumn();
+          },
           child: const Text('Add Column'),
         ),
         TextButton(

@@ -27,27 +27,35 @@ class KanbanBoard {
               description: 'description',
               status: 'Product Backlog',
               assignee: 'assignee',
-              sha: 'sha'),
+              sha: 'sha',
+            needDate: DateTime.now(),
+              blocked: false
+
+          ),
           KanbanCard(id: 101,
               title: 'Sample',
               description: 'description',
               status: 'Product Backlog',
               assignee: 'assignee',
-              sha: 'sha')
+              sha: 'sha',
+              needDate: DateTime.now(),
+              blocked: false)
         ]),
         KanbanColumn(id: 2, name: 'Sprint Backlog', cards: [
           KanbanCard(id: 200,
               title: 'Sample',
               description: 'description',
-              status: 'Product Backlog',
+              status: 'Sprint Backlog',
               assignee: 'assignee',
-              sha: 'sha'),
+              sha: 'sha',
+              needDate: DateTime.now(),     blocked: false),
           KanbanCard(id: 201,
               title: 'Sample',
               description: 'description',
-              status: 'Product Backlog',
+              status: 'Sprint Backlog',
               assignee: 'assignee',
-              sha: 'sha')
+              sha: 'sha',
+              needDate: DateTime.now(),     blocked: false)
         ]),
         KanbanColumn(id: 3,
             name: 'WIP',
@@ -55,9 +63,10 @@ class KanbanBoard {
               KanbanCard(id: 301,
                   title: 'Sample',
                   description: 'description',
-                  status: 'Product Backlog',
+                  status: 'WIP',
                   assignee: 'assignee',
-                  sha: 'sha')
+                  sha: 'sha',
+                  needDate: DateTime.now(),     blocked: false)
             ]),
         KanbanColumn(id: 4,
             name: 'Testing',
@@ -65,9 +74,11 @@ class KanbanBoard {
               KanbanCard(id: 401,
                   title: 'Sample',
                   description: 'description',
-                  status: 'Product Backlog',
+                  status: 'WIP',
                   assignee: 'assignee',
-                  sha: 'sha')
+                  sha: 'sha',
+                  needDate: DateTime.now(),
+                  blocked: false)
             ]),
         KanbanColumn(id: 5,
             name: 'Done',
@@ -75,9 +86,12 @@ class KanbanBoard {
               KanbanCard(id: 501,
                   title: 'Sample',
                   description: 'description',
-                  status: 'Product Backlog',
+                  status: 'Done',
                   assignee: 'assignee',
-                  sha: 'sha')
+                  sha: 'sha',
+                  needDate: DateTime.now(),
+                  blocked: false
+              )
             ])
       ]);
     } catch (e) {

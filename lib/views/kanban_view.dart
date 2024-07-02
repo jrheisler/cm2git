@@ -13,9 +13,12 @@
 
 import 'dart:convert';
 
+import 'package:cm_2_git/services/state_abstract.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../common/constants.dart';
+import '../controllers/kanban_board_state.dart';
 import '../main.dart';
 import '../models/kanban_board.dart';
 import '../models/kanban_card.dart';
@@ -24,8 +27,10 @@ import '../services/git_services.dart';
 import '../services/local_storage_helper.dart';
 import '../services/mili.dart';
 import '../services/singleton_data.dart';
+import '../services/state_lifecycle_mixin.dart';
 import 'column_management_dialog.dart';
 import 'delete_dialog.dart';
+import 'github_stats_dialog.dart';
 import 'kanban_card_dialog.dart';
 import 'kanban_column_dialog.dart';
 
@@ -65,14 +70,13 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     _refreshFiles();
   }
 
-
   void _addCard(String columnName) {
     showDialog(
       context: context,
       builder: (context) {
         return KanbanCardDialog(
           columnName: columnName,
-          onDelete: (){
+          onDelete: () {
             Navigator.of(context).pop();
           },
           onSave: (card) {
@@ -81,6 +85,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                   .firstWhere((column) => column.name == columnName)
                   .cards
                   .add(card);
+
+              card.dates
+                  .add(KanbanDates(date: DateTime.now(), status: card.status));
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
             });
@@ -112,16 +119,24 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           },
           onSave: (updatedCard) {
             setState(() {
-              kanbanBoard.columns
-                  .firstWhere((column) => column.name == updatedCard.status)
-                  .cards
-                  .removeWhere((c) => c.id == updatedCard.id);
-              kanbanBoard.columns
-                  .firstWhere((column) => column.name == updatedCard.status)
-                  .cards
-                  .add(updatedCard);
+              var column = kanbanBoard.columns
+                  .firstWhere((column) => column.name == updatedCard.status);
+
+              // Find the index of the card to be updated
+              int index =
+                  column.cards.indexWhere((c) => c.id == updatedCard.id);
+
+              if (index != -1) {
+                // Remove the card from the list
+                column.cards.removeAt(index);
+
+                // Insert the updated card back at the same index
+                column.cards.insert(index, updatedCard);
+              }
               LocalStorageHelper.saveValue(
-                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                'kanban_board',
+                jsonEncode(kanbanBoard.toJson()),
+              );
             });
           },
         );
@@ -186,8 +201,24 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         column.cards.removeWhere((c) => c.id == card.id);
       });
 
+      final newCard = KanbanCard(
+          id: card.id ?? DateTime.now().millisecondsSinceEpoch,
+          title: card.title,
+          description: card.description,
+          assignee: card.assignee,
+          status: targetColumn.name,
+          files: card.files ?? [],
+          sha: card.sha ?? '',
+          dates: card.dates,
+          needDate: card.needDate,
+          blocked: card.blocked);
+
+      KanbanDates kd =
+          KanbanDates(date: DateTime.now(), status: targetColumn.name);
+      newCard.dates.add(kd);
+
       // Add the card to the new column
-      targetColumn.cards.add(card);
+      targetColumn.cards.add(newCard);
       LocalStorageHelper.saveValue(
           'kanban_board', jsonEncode(kanbanBoard.toJson()));
     });
@@ -248,6 +279,17 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         title: const Text('Kanban Board'),
         actions: [
           IconButton(
+              icon: const Icon(Icons.auto_graph),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => GitHubStatsDialog(
+                    owner: 'jrheisler',
+                    repo: 'cm2git',
+                  ),
+                );
+              }),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshFiles,
             tooltip: 'Refresh Files',
@@ -257,7 +299,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             onPressed: _manageColumns,
             tooltip: 'Manage Columns',
           ),
-
           SizedBox(
             width: 40,
             child: Tooltip(
@@ -361,6 +402,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       ),
     );
   }
+
 }
 
 class KanbanColumnWidget extends StatelessWidget {
@@ -465,8 +507,7 @@ class KanbanCardWidget extends StatelessWidget {
   final KanbanCard card;
   final VoidCallback onEdit;
 
-  KanbanCardWidget(
-      {required this.card, required this.onEdit});
+  KanbanCardWidget({required this.card, required this.onEdit});
 
   void _copyToClipboard(BuildContext context) {
     final text = 'Card ID: ${card.id}';
@@ -479,7 +520,7 @@ class KanbanCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: singletonData.kPrimaryColor,
+      color: card.blocked ? Colors.redAccent : singletonData.kPrimaryColor,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -496,10 +537,25 @@ class KanbanCardWidget extends StatelessWidget {
               ],
             ),
             Text('Title: ${card.title}'),
+            const Divider(),
             Text('Description: ${card.description}'),
+            const Divider(),
             Text('Assignee: ${card.assignee}'),
+            const Divider(),
             Text('Status: ${card.status}'),
+            const Divider(),
             Text('Create Date: ${convertMilliToDateTime(card.id)}'),
+            const Divider(),
+            card.needDate!.isBefore(DateTime.now())
+                ? Text(
+                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}',
+                    style: card.blocked
+                        ? const TextStyle(color: Colors.black)
+                        : const TextStyle(color: Colors.red),
+                  )
+                : Text(
+                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}'),
+            const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -507,7 +563,6 @@ class KanbanCardWidget extends StatelessWidget {
                   icon: const Icon(Icons.edit),
                   onPressed: onEdit,
                 ),
-
               ],
             ),
           ],
