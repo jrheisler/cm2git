@@ -12,13 +12,10 @@
 //   }
 
 import 'dart:convert';
-
-import 'package:cm_2_git/services/state_abstract.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../common/constants.dart';
-import '../controllers/kanban_board_state.dart';
 import '../main.dart';
 import '../models/kanban_board.dart';
 import '../models/kanban_card.dart';
@@ -75,6 +72,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       context: context,
       builder: (context) {
         return KanbanCardDialog(
+          kanban: kanbanBoard,
           columnName: columnName,
           onDelete: () {
             Navigator.of(context).pop();
@@ -102,6 +100,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       context: context,
       builder: (context) {
         return KanbanCardDialog(
+          kanban: kanbanBoard,
           card: card,
           columnName: card.status,
           onDelete: () async {
@@ -124,7 +123,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
               // Find the index of the card to be updated
               int index =
-                  column.cards.indexWhere((c) => c.id == updatedCard.id);
+              column.cards.indexWhere((c) => c.id == updatedCard.id);
 
               if (index != -1) {
                 // Remove the card from the list
@@ -214,7 +213,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           blocked: card.blocked);
 
       KanbanDates kd =
-          KanbanDates(date: DateTime.now(), status: targetColumn.name);
+      KanbanDates(date: DateTime.now(), status: targetColumn.name);
       newCard.dates.add(kd);
 
       // Add the card to the new column
@@ -548,13 +547,13 @@ class KanbanCardWidget extends StatelessWidget {
             const Divider(),
             card.needDate!.isBefore(DateTime.now())
                 ? Text(
-                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}',
-                    style: card.blocked
-                        ? const TextStyle(color: Colors.black)
-                        : const TextStyle(color: Colors.red),
-                  )
+              'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}',
+              style: card.blocked
+                  ? const TextStyle(color: Colors.black)
+                  : const TextStyle(color: Colors.red),
+            )
                 : Text(
-                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}'),
+                'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}'),
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
