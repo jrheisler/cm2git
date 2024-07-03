@@ -12,6 +12,7 @@
 //   }
 
 import 'dart:convert';
+import 'package:cm_2_git/views/timeline_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -277,7 +278,20 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       appBar: AppBar(
         title: const Text('Kanban Board'),
         actions: [
+        IconButton(
+        icon: const Icon(Icons.graphic_eq_sharp),
+              onPressed: () {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return TimelineChart(
+                        kanban: kanbanBoard);
+                  });
+            },
+            tooltip: 'Timeline Chart',
+          ),
           IconButton(
+            tooltip: 'Git Status',
               icon: const Icon(Icons.auto_graph),
               onPressed: () {
                 showDialog(

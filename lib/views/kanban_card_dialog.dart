@@ -1,9 +1,7 @@
 import 'package:cm_2_git/models/kanban_board.dart';
-import 'package:cm_2_git/views/kanban_view.dart';
 import 'package:cm_2_git/views/timeline_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../main.dart';
 import '../models/kanban_card.dart';
 import '../services/email.dart';
@@ -23,7 +21,8 @@ class KanbanCardDialog extends StatefulWidget {
     this.card,
     required this.columnName,
     required this.onSave,
-    required this.onDelete, required this.kanban,
+    required this.onDelete,
+    required this.kanban,
   });
 
   @override
@@ -41,13 +40,15 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.card?.title ?? '');
-    _descriptionController = TextEditingController(text: widget.card?.description ?? '');
-    _assigneeController = TextEditingController(text: widget.card?.assignee ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.card?.description ?? '');
+    _assigneeController =
+        TextEditingController(text: widget.card?.assignee ?? '');
     _needDateController = TextEditingController(
       text: widget.card != null
           ? widget.card!.needDate != null
-          ? DateFormat('yyyy-MM-dd').format(widget.card!.needDate!)
-          : DateFormat('yyyy-MM-dd').format(DateTime.now())
+              ? DateFormat('yyyy-MM-dd').format(widget.card!.needDate!)
+              : DateFormat('yyyy-MM-dd').format(DateTime.now())
           : DateFormat('yyyy-MM-dd').format(DateTime.now()),
     );
     _blocked = widget.card?.blocked ?? false;
@@ -77,7 +78,8 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       String sha = inSha;
       String token = retrieveString(singletonData.cm2git);
 
-      GitHubCommitDetails commitDetails = await fetchCommitDetails(owner, repo, sha, token);
+      GitHubCommitDetails commitDetails =
+          await fetchCommitDetails(owner, repo, sha, token);
       _showCommitDetailsDialog(commitDetails);
     } catch (e) {
       print('Error fetching commit details: $e');
@@ -134,7 +136,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     return AlertDialog(
       backgroundColor: singletonData.kPrimaryColor,
       title: Text(widget.card == null ? 'Add Card' : 'Edit Card'),
-      content: Container(
+      content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
           child: Column(
@@ -167,7 +169,8 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
 
                   if (pickedDate != null) {
                     setState(() {
-                      _needDateController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
+                      _needDateController.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
                     });
                   }
                 },
@@ -182,24 +185,18 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                 },
               ),
               widget.card != null
-                  ? Text('Create Date: ${convertMilliToDateTime(widget.card!.id)}')
+                  ? Text(
+                      'Create Date: ${convertMilliToDateTime(widget.card!.id)}')
                   : const SizedBox.shrink(),
               const SizedBox(height: 20),
               const Divider(),
-              const Text('Status and Dates', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Status and Dates',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               _buildCommitDates(),
-              ElevatedButton(
-                onPressed: () {
-                  AlertDialog(
-                      backgroundColor: singletonData.kPrimaryColor,
-                    content: TimelineChart(kanban: widget.kanban, status: widget.card!.status),
-                  );
-                },
-                child: const Text('Timeline Chart'),
-              ),
               const SizedBox(height: 20),
               const Divider(),
-              const Text('Commit Details', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Commit Details',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               _buildCommitDetails(),
             ],
           ),
@@ -266,4 +263,3 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     }
   }
 }
-
