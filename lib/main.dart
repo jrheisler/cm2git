@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     singletonData = setSingles();
-    singletonData.version = '.080';
+    singletonData.version = '.085';
 
     return MaterialApp(
       debugShowCheckedModeBanner: singletonData.kDebugMode,

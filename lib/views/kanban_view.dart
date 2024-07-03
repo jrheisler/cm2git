@@ -280,6 +280,11 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       appBar: AppBar(
         title: const Text('Kanban Board'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshFiles,
+            tooltip: 'Refresh Files',
+          ),
         IconButton(
         icon: const Icon(Icons.graphic_eq_sharp),
               onPressed: () {
@@ -313,11 +318,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             icon: const Icon(Icons.import_export_sharp),
             onPressed: _importKanban,
             tooltip: 'Import a Kanban From File',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshFiles,
-            tooltip: 'Refresh Files',
           ),
           IconButton(
             icon: const Icon(Icons.view_column),
