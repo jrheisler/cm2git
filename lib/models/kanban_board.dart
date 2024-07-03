@@ -1,4 +1,3 @@
-import 'kanban_card.dart';
 import 'kanban_column.dart';
 
 class KanbanBoard {

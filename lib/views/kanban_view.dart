@@ -16,11 +16,13 @@ import 'package:cm_2_git/views/timeline_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:universal_html/html.dart' as html;
 import '../common/constants.dart';
 import '../main.dart';
 import '../models/kanban_board.dart';
 import '../models/kanban_card.dart';
 import '../models/kanban_column.dart';
+import '../services/download_file.dart';
 import '../services/git_services.dart';
 import '../services/local_storage_helper.dart';
 import '../services/mili.dart';
@@ -303,6 +305,16 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 );
               }),
           IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _downloadKanban,
+            tooltip: 'Download Kanban',
+          ),
+          IconButton(
+            icon: const Icon(Icons.import_export_sharp),
+            onPressed: _importKanban,
+            tooltip: 'Import a Kanban From File',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshFiles,
             tooltip: 'Refresh Files',
@@ -413,6 +425,43 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           ),
         ),
       ),
+    );
+  }
+
+
+  void _downloadKanban() {
+
+      var projJson = kanbanBoard.toJson();
+      var encoded = jsonEncode(projJson);
+
+      downloadFile(encoded, 'Kanban Board');
+    }
+
+  void _importKanban() {
+    // HTML input element
+    html.InputElement uploadInput = html.FileUploadInputElement() as html.InputElement
+      ..accept = '*/json';
+    uploadInput.click();
+
+    uploadInput.onChange.listen(
+          (changeEvent) {
+        final file = uploadInput.files!.first;
+        final reader = html.FileReader();
+
+        reader.readAsText(file);
+
+        reader.onLoadEnd.listen(
+          // After file finish reading and loading, it will be uploaded to firebase storage
+                (loadEndEvent) async {
+              var json = reader.result;
+              kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
+              setState(() {
+                LocalStorageHelper.saveValue(
+                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              });
+            });
+
+      },
     );
   }
 
