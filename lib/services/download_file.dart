@@ -21,30 +21,3 @@ Future<void> downloadFile(String text, String? name) async {
   html.document.body?.children.remove(anchor);
   html.Url.revokeObjectUrl(url);
 }
-
-Future<void> importJ(KanbanBoard kanbanBoard, _kanbanBoardScreenState) async {
-  // HTML input element
-  InputElement uploadInput = FileUploadInputElement() as InputElement
-    ..accept = '*/json';
-  uploadInput.click();
-
-   uploadInput.onChange.listen(
-    (changeEvent) {
-      final file = uploadInput.files!.first;
-      final reader = FileReader();
-
-      reader.readAsText(file);
-
-        reader.onLoadEnd.listen(
-            // After file finish reading and loading, it will be uploaded to firebase storage
-            (loadEndEvent) async {
-          var json = reader.result;
-          print(42);
-          kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
-          print(kanbanBoard);
-          _kanbanBoardScreenState.setState(() {});
-        });
-
-    },
-  );
-}

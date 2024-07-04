@@ -126,7 +126,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
               // Find the index of the card to be updated
               int index =
-              column.cards.indexWhere((c) => c.id == updatedCard.id);
+                  column.cards.indexWhere((c) => c.id == updatedCard.id);
 
               if (index != -1) {
                 // Remove the card from the list
@@ -216,7 +216,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           blocked: card.blocked);
 
       KanbanDates kd =
-      KanbanDates(date: DateTime.now(), status: targetColumn.name);
+          KanbanDates(date: DateTime.now(), status: targetColumn.name);
       newCard.dates.add(kd);
 
       // Add the card to the new column
@@ -251,6 +251,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   Future<void> _refreshFiles() async {
     try {
       final List<GitCommit> commits = await _gitHubService.getCommits();
+      final List<GitPullRequest> pulls = await _gitHubService.getPullRequests();
+      //final List<GitBranch> branches = await _gitHubService.getBranches();
       setState(() {
         for (var column in kanbanBoard.columns) {
           for (var card in column.cards) {
@@ -263,6 +265,30 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             }
           }
         }
+        for (var column in kanbanBoard.columns) {
+          for (var card in column.cards) {
+            card.files = [];
+            for (var pull in pulls) {
+              if (pull.body.contains('${card.id}')) {
+                card.files.add(pull);
+                card.sha = '';
+              }
+            }
+          }
+        }
+        /*
+        for (var column in kanbanBoard.columns) {
+          for (var card in column.cards) {
+            card.files = [];
+            for (var branch in branches) {
+              if (branch.commit.commit.message.contains('${card.id}')) {
+                card.files.add(branch.commit);
+                card.sha = branch.commit.commit.sha;
+              }
+            }
+          }
+        }
+*/
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Refreshed')),
         );
@@ -285,20 +311,19 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             onPressed: _refreshFiles,
             tooltip: 'Refresh Files',
           ),
-        IconButton(
-        icon: const Icon(Icons.graphic_eq_sharp),
-              onPressed: () {
+          IconButton(
+            icon: const Icon(Icons.graphic_eq_sharp),
+            onPressed: () {
               showDialog(
                   context: context,
                   builder: (context) {
-                    return TimelineChart(
-                        kanban: kanbanBoard);
+                    return TimelineChart(kanban: kanbanBoard);
                   });
             },
             tooltip: 'Timeline Chart',
           ),
           IconButton(
-            tooltip: 'Git Status',
+              tooltip: 'Git Status',
               icon: const Icon(Icons.auto_graph),
               onPressed: () {
                 showDialog(
@@ -428,43 +453,39 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     );
   }
 
-
   void _downloadKanban() {
+    var projJson = kanbanBoard.toJson();
+    var encoded = jsonEncode(projJson);
 
-      var projJson = kanbanBoard.toJson();
-      var encoded = jsonEncode(projJson);
-
-      downloadFile(encoded, 'Kanban Board');
-    }
+    downloadFile(encoded, 'Kanban Board');
+  }
 
   void _importKanban() {
     // HTML input element
-    html.InputElement uploadInput = html.FileUploadInputElement() as html.InputElement
-      ..accept = '*/json';
+    html.InputElement uploadInput =
+        html.FileUploadInputElement() as html.InputElement..accept = '*/json';
     uploadInput.click();
 
     uploadInput.onChange.listen(
-          (changeEvent) {
+      (changeEvent) {
         final file = uploadInput.files!.first;
         final reader = html.FileReader();
 
         reader.readAsText(file);
 
         reader.onLoadEnd.listen(
-          // After file finish reading and loading, it will be uploaded to firebase storage
-                (loadEndEvent) async {
-              var json = reader.result;
-              kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
-              setState(() {
-                LocalStorageHelper.saveValue(
-                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              });
-            });
-
+            // After file finish reading and loading, it will be uploaded to firebase storage
+            (loadEndEvent) async {
+          var json = reader.result;
+          kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
+          setState(() {
+            LocalStorageHelper.saveValue(
+                'kanban_board', jsonEncode(kanbanBoard.toJson()));
+          });
+        });
       },
     );
   }
-
 }
 
 class KanbanColumnWidget extends StatelessWidget {
@@ -610,13 +631,13 @@ class KanbanCardWidget extends StatelessWidget {
             const Divider(),
             card.needDate!.isBefore(DateTime.now())
                 ? Text(
-              'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}',
-              style: card.blocked
-                  ? const TextStyle(color: Colors.black)
-                  : const TextStyle(color: Colors.red),
-            )
+                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}',
+                    style: card.blocked
+                        ? const TextStyle(color: Colors.black)
+                        : const TextStyle(color: Colors.red),
+                  )
                 : Text(
-                'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}'),
+                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}'),
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,

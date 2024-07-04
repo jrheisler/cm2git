@@ -272,8 +272,95 @@ class GitHubService {
       throw Exception('Failed to load commits');
     }
   }
+
+  Future<List<GitPullRequest>> getPullRequests() async {
+    final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/pulls';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> pullRequestList = json.decode(response.body);
+      return pullRequestList.map((pr) => GitPullRequest.fromJson(pr)).toList();
+    } else {
+      throw Exception('Failed to load pull requests');
+    }
+  }
+  Future<List<GitBranch>> getBranches() async {
+    final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/branches';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> branchList = json.decode(response.body);
+      return branchList.map((branch) => GitBranch.fromJson(branch)).toList();
+    } else {
+      throw Exception('Failed to load branches');
+    }
+  }
 }
 
+class GitBranch {
+  String name;
+  GitCommit commit;
+  bool protected;
+
+  GitBranch({
+    required this.name,
+    required this.commit,
+    required this.protected,
+  });
+
+  factory GitBranch.fromJson(Map<String, dynamic> json) {
+    return GitBranch(
+      name: json['name'],
+      commit: GitCommit.fromJson(json['commit']),
+      protected: json['protected'],
+    );
+  }
+}
+
+class GitPullRequest {
+  int id;
+  int number;
+  String state;
+  String title;
+  User user;
+  String body;
+  DateTime createdAt;
+  DateTime updatedAt;
+  DateTime? closedAt;
+  DateTime? mergedAt;
+
+  GitPullRequest({
+    required this.id,
+    required this.number,
+    required this.state,
+    required this.title,
+    required this.user,
+    required this.body,
+    required this.createdAt,
+    required this.updatedAt,
+    this.closedAt,
+    this.mergedAt,
+  });
+
+  factory GitPullRequest.fromJson(Map<String, dynamic> json) {
+    return GitPullRequest(
+      id: json['id'],
+      number: json['number'],
+      state: json['state'],
+      title: json['title'],
+      user: User.fromJson(json['user']),
+      body: json['body'] ?? '',
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      closedAt: json['closed_at'] != null ? DateTime.parse(json['closed_at']) : null,
+      mergedAt: json['merged_at'] != null ? DateTime.parse(json['merged_at']) : null,
+    );
+  }
+}
 
 class GitCommit {
   String sha;
