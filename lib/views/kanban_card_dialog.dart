@@ -87,6 +87,92 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     }
   }
 
+  Widget _buildBranchDetails() {
+    if (widget.card == null || widget.card!.branches.isEmpty) {
+      return const Text('No Branches');
+    }
+
+    return Flexible(
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: widget.card!.branches.length,
+        itemBuilder: (context, index) {
+          final commit = widget.card!.branches[index];
+          return ListTile(
+            title: Text(commit.message),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Author: ${commit.author.name}"),
+                Text("Date: ${commit.author.date}"),
+                GestureDetector(
+                  onTap: () => launchUrl(commit.url),
+                  child: Text(
+                    "URL Click to Open: ${commit.url}",
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                Text("Message: ${commit.message}"),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _fetchAndShowCommitDetails(commit.sha);
+                  },
+                  child: const Text('Files'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+  Widget _buildPullDetails() {
+    if (widget.card == null || widget.card!.pulls.isEmpty) {
+      return const Text('No Pulls');
+    }
+
+    return Flexible(
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: widget.card!.pulls.length,
+        itemBuilder: (context, index) {
+          final commit = widget.card!.pulls[index];
+          return ListTile(
+            title: Text(commit.message),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Author: ${commit.author.name}"),
+                Text("Date: ${commit.author.date}"),
+                GestureDetector(
+                  onTap: () => launchUrl(commit.url),
+                  child: Text(
+                    "URL Click to Open: ${commit.url}",
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                Text("Message: ${commit.message}"),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _fetchAndShowCommitDetails(commit.sha);
+                  },
+                  child: const Text('Files'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
   Widget _buildCommitDetails() {
     if (widget.card == null || widget.card!.files.isEmpty) {
       return const Text('No Commits');
@@ -176,6 +262,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                 },
               ),
               CheckboxListTile(
+              tileColor: _blocked ? Colors.redAccent: singletonData.kPrimaryColor,
                 title: const Text('Blocked'),
                 value: _blocked,
                 onChanged: (bool? value) {
@@ -198,6 +285,14 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
               const Text('Commit Details',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               _buildCommitDetails(),
+              const Divider(),
+              const Text('Pull Details',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              _buildPullDetails(),
+              const Divider(),
+              const Text('Branches Details',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              _buildBranchDetails(),
             ],
           ),
         ),

@@ -16,12 +16,14 @@ class KanbanColumnDialog extends StatefulWidget {
 
 class _KanbanColumnDialogState extends State<KanbanColumnDialog> {
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _maxCards = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     if (widget.column != null) {
       _titleController.text = widget.column!.name;
+      _maxCards.text = widget.column!.maxCards.toString();
     }
   }
 
@@ -30,9 +32,22 @@ class _KanbanColumnDialogState extends State<KanbanColumnDialog> {
     return AlertDialog(
       backgroundColor: singletonData.kPrimaryColor,
       title: Text(widget.column == null ? 'Add Column' : 'Edit Column'),
-      content: TextField(
-        controller: _titleController,
-        decoration: const InputDecoration(labelText: 'Column Title'),
+      content: SizedBox(
+        height: 200,
+        width: 400,
+        child: Column(
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: InputDecoration(labelText: 'Column Title', enabled: widget.column == null),
+            ),
+            const SizedBox(height: 20,),
+            TextField(
+              controller: _maxCards,
+              decoration: const InputDecoration(labelText: 'Max Cards 0 is unlimited'),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -49,6 +64,7 @@ class _KanbanColumnDialogState extends State<KanbanColumnDialog> {
                 id: widget.column?.id ?? DateTime.now().millisecondsSinceEpoch.toInt(),
                 name: title,
                 cards: widget.column?.cards ?? [],
+                maxCards: int.parse(_maxCards.text),
               );
               widget.onSave(column);
               Navigator.of(context).pop();

@@ -197,33 +197,41 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   }
 
   void _onCardDropped(KanbanCard card, KanbanColumn targetColumn) {
-    setState(() {
-      // Remove the card from its original column
-      kanbanBoard.columns.forEach((column) {
-        column.cards.removeWhere((c) => c.id == card.id);
+    if (targetColumn.cards.length < targetColumn.maxCards) {
+      setState(() {
+        // Remove the card from its original column
+        for (var column in kanbanBoard.columns) {
+          column.cards.removeWhere((c) => c.id == card.id);
+        }
+
+        final newCard = KanbanCard(
+            id: card.id ?? DateTime
+                .now()
+                .millisecondsSinceEpoch,
+            title: card.title,
+            description: card.description,
+            assignee: card.assignee,
+            status: targetColumn.name,
+            files: card.files ?? [],
+            sha: card.sha ?? '',
+            dates: card.dates,
+            needDate: card.needDate,
+            blocked: card.blocked);
+
+        KanbanDates kd =
+        KanbanDates(date: DateTime.now(), status: targetColumn.name);
+        newCard.dates.add(kd);
+
+        // Add the card to the new column
+        targetColumn.cards.add(newCard);
+        LocalStorageHelper.saveValue(
+            'kanban_board', jsonEncode(kanbanBoard.toJson()));
       });
-
-      final newCard = KanbanCard(
-          id: card.id ?? DateTime.now().millisecondsSinceEpoch,
-          title: card.title,
-          description: card.description,
-          assignee: card.assignee,
-          status: targetColumn.name,
-          files: card.files ?? [],
-          sha: card.sha ?? '',
-          dates: card.dates,
-          needDate: card.needDate,
-          blocked: card.blocked);
-
-      KanbanDates kd =
-          KanbanDates(date: DateTime.now(), status: targetColumn.name);
-      newCard.dates.add(kd);
-
-      // Add the card to the new column
-      targetColumn.cards.add(newCard);
-      LocalStorageHelper.saveValue(
-          'kanban_board', jsonEncode(kanbanBoard.toJson()));
-    });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You can't add more cards to this column")),
+      );
+    }
   }
 
   void _deleteColumn(KanbanColumn column) {
@@ -265,12 +273,13 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             }
           }
         }
+
         for (var column in kanbanBoard.columns) {
           for (var card in column.cards) {
-            card.files = [];
+            card.pulls = [];
             for (var pull in pulls) {
               if (pull.body.contains('${card.id}')) {
-                card.files.add(pull);
+                card.pulls.add(pull);
                 card.sha = '';
               }
             }
@@ -302,6 +311,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    int i = 0;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kanban Board'),
@@ -376,6 +386,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: kanbanBoard.columns.map((column) {
+              i++;
               return Container(
                 decoration: newBoxDec(),
                 width: 300,
@@ -397,9 +408,34 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                             ),
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () => _addCard(column.name),
+                        i == 1
+                            ? IconButton(
+                                tooltip: 'Add a Card',
+                                icon: const Icon(Icons.add),
+                                onPressed: () {
+                                  if (column.maxCards > column.cards.length) {
+                                    _addCard(column.name);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("You can't add more cards to this column")),
+                                    );
+                                  }
+                                },
+                              )
+                            : IconButton(
+                                tooltip:
+                                    'You can only add cards to the first column',
+                                icon: const Icon(
+                                    color: Colors.black45,
+                                    Icons.check_box_outline_blank),
+                                onPressed: () => setState(() {}),
+                              ),
+                        Text(
+                          '${column.cards.length}/${column.maxCards}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),

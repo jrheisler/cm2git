@@ -20,26 +20,17 @@ class KanbanBoard {
   factory KanbanBoard.fromData() {
     try {
       return KanbanBoard(columns: [
-        KanbanColumn(id: 1, name: 'Product Backlog', cards: [
-
-        ]),
-        KanbanColumn(id: 2, name: 'Sprint Backlog', cards: [
-
-        ]),
+        KanbanColumn(id: 1, name: 'Product Backlog', cards: [], maxCards: 0),
+        KanbanColumn(id: 2, name: 'Sprint Backlog', cards: [], maxCards: 0),
         KanbanColumn(id: 3,
             name: 'WIP',
-            cards: [
-
-            ]),
+            cards: [], maxCards: 0),
         KanbanColumn(id: 4,
             name: 'Testing',
-            cards: [
-
-            ]),
+            cards: [], maxCards: 0),
         KanbanColumn(id: 5,
             name: 'Done',
-            cards: [
-            ])
+            cards: [], maxCards: 0)
       ]);
     } catch (e) {
       return KanbanBoard(columns: []);

@@ -35,17 +35,18 @@ class _ColumnManagementDialogState extends State<ColumnManagementDialog> {
             final column = widget.columns[index];
             return ListTile(
               title: Text(column.name),
+              subtitle: Text('Max Cards: ${column.maxCards}'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  /*IconButton(
+                  IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
                       Navigator.of(context).pop();
                       widget.onEditColumn(column);
 
                     },
-                  ),*/
+                  ),
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () {

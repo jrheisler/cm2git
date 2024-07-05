@@ -299,6 +299,43 @@ class GitHubService {
       throw Exception('Failed to load branches');
     }
   }
+
+  //sample
+  //await gitHubService.createPullRequest(
+  //     title: 'New Feature',
+  //     head: 'feature-branch',
+  //     base: 'main',
+  //     body: 'This pull request introduces a new feature...',
+  //   );
+
+  Future<void> createPullRequest({
+    required String title,
+    required String head,
+    required String base,
+    required String body,
+  }) async {
+    final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/pulls';
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'token $_token',
+        'Accept': 'application/vnd.github.v3+json',
+      },
+      body: json.encode({
+        'title': title,
+        'head': head,
+        'base': base,
+        'body': body,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      print('Pull request created successfully');
+    } else {
+      print('Failed to create pull request: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    }
+  }
 }
 
 class GitBranch {
