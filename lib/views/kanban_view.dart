@@ -71,6 +71,22 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     _refreshFiles();
   }
 
+  // Handle file open request from JavaScript
+  Future<void> handleFileOpen(String fileContent) async {
+    try {
+      // Parse JSON content
+      try {
+        kanbanBoard = KanbanBoard.fromJson(jsonDecode(fileContent));
+      } catch (e) {
+        kanbanBoard = KanbanBoard.fromData();
+      }
+      setState(() {});
+    } catch (e) {
+      print('Error parsing JSON: $e');
+    }
+  }
+
+
   void _addCard(String columnName) {
     showDialog(
       context: context,
