@@ -13,6 +13,7 @@
 
 import 'dart:convert';
 import 'package:cm_2_git/views/timeline_data.dart';
+import 'package:cm_2_git/views/tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -205,9 +206,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         }
 
         final newCard = KanbanCard(
-            id: card.id ?? DateTime
-                .now()
-                .millisecondsSinceEpoch,
+            id: card.id ?? DateTime.now().millisecondsSinceEpoch,
             title: card.title,
             description: card.description,
             assignee: card.assignee,
@@ -219,7 +218,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             blocked: card.blocked);
 
         KanbanDates kd =
-        KanbanDates(date: DateTime.now(), status: targetColumn.name);
+            KanbanDates(date: DateTime.now(), status: targetColumn.name);
         newCard.dates.add(kd);
 
         // Add the card to the new column
@@ -229,7 +228,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("You can't add more cards to this column")),
+        const SnackBar(
+            content: Text("You can't add more cards to this column")),
       );
     }
   }
@@ -320,6 +320,21 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: _refreshFiles,
             tooltip: 'Refresh Files',
+          ),
+          IconButton(
+            icon: const Icon(Icons.streetview_sharp),
+            onPressed: () {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return GitHubFileTree(
+                      githubUser: 'jrheisler',
+                      githubToken: retrieveString(singletonData.cm2git),
+                      githubRepo: 'cm2git',
+                    );
+                  });
+            },
+            tooltip: 'Tree View',
           ),
           IconButton(
             icon: const Icon(Icons.graphic_eq_sharp),
@@ -413,11 +428,13 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                                 tooltip: 'Add a Card',
                                 icon: const Icon(Icons.add),
                                 onPressed: () {
-                                  if (column.maxCards > column.cards.length) {
+                                  if (column.maxCards == 0 || column.maxCards > column.cards.length) {
                                     _addCard(column.name);
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("You can't add more cards to this column")),
+                                      const SnackBar(
+                                          content: Text(
+                                              "You can't add more cards to this column")),
                                     );
                                   }
                                 },
