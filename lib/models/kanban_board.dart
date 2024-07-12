@@ -1,25 +1,29 @@
 import 'kanban_column.dart';
 
 class KanbanBoard {
+  String name;
   List<KanbanColumn> columns;
 
-  KanbanBoard({required this.columns});
+  KanbanBoard({required this.columns, required this.name});
 
   factory KanbanBoard.fromJson(Map<String, dynamic> json) {
     return KanbanBoard(
       columns: (json['columns'] as List)
           .map((column) => KanbanColumn.fromJson(column))
           .toList(),
+      name: json['name'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() => {
+    'name': name,
     'columns': columns.map((column) => column.toJson()).toList(),
   };
 
   factory KanbanBoard.fromData() {
     try {
-      return KanbanBoard(columns: [
+      return KanbanBoard(name: 'Main Kanban',
+          columns: [
         KanbanColumn(id: 1, name: 'Product Backlog', cards: [], maxCards: 0),
         KanbanColumn(id: 2, name: 'Sprint Backlog', cards: [], maxCards: 0),
         KanbanColumn(id: 3,
@@ -33,7 +37,7 @@ class KanbanBoard {
             cards: [], maxCards: 0)
       ]);
     } catch (e) {
-      return KanbanBoard(columns: []);
+      return KanbanBoard(name: 'Main Kanban', columns: []);
     };
   }
 }

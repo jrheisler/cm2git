@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../main.dart';
+import '../models/branches.dart';
 
 class GitHubApi {
   final String baseUrl = "https://api.github.com";
@@ -286,6 +287,22 @@ class GitHubService {
       throw Exception('Failed to load pull requests');
     }
   }
+  Future<List<String>> fetchBranches() async {
+    var url = Uri.https('api.github.com', '/repos/$_repoOwner/$_repoName/branches');
+    var response = await http.get(url, headers: {
+      'Authorization': 'Bearer $_token',
+      'Accept': 'application/vnd.github.v3+json',
+    });
+
+    if (response.statusCode == 200) {
+      print(response.body);
+      List<dynamic> branchesJson = jsonDecode(response.body);
+      return branchesJson.map((branch) => branch['name'] as String).toList();
+    } else {
+      throw Exception('Failed to load branches: ${response.statusCode}');
+    }
+  }
+
   Future<List<GitBranch>> getBranches() async {
     final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/branches';
     final response = await http.get(
@@ -294,6 +311,7 @@ class GitHubService {
     );
     if (response.statusCode == 200) {
       final List<dynamic> branchList = json.decode(response.body);
+
       return branchList.map((branch) => GitBranch.fromJson(branch)).toList();
     } else {
       throw Exception('Failed to load branches');
@@ -351,12 +369,15 @@ class GitBranch {
 
   factory GitBranch.fromJson(Map<String, dynamic> json) {
     return GitBranch(
-      name: json['name'],
-      commit: GitCommit.fromJson(json['commit']),
-      protected: json['protected'],
+      name: json['name'] ?? '',
+      commit: GitCommit.fromJson(json['commit']) ,
+      protected: json['protected'] ?? '',
     );
   }
 }
+
+
+
 
 class GitPullRequest {
   int id;
@@ -424,17 +445,17 @@ class GitCommit {
 
   factory GitCommit.fromJson(Map<String, dynamic> json) {
     return GitCommit(
-      sha: json['sha'],
-      nodeId: json['node_id'],
+      sha: json['sha']?? '',
+      nodeId: json['node_id']?? '',
       commit: CommitDetail.fromJson(json['commit'], json['sha']),
-      url: json['url'],
-      htmlUrl: json['html_url'],
-      commentsUrl: json['comments_url'],
-      author: User.fromJson(json['author']),
-      committer: User.fromJson(json['committer']),
+      url: json['url']?? '',
+      htmlUrl: json['html_url']?? '',
+      commentsUrl: json['comments_url']?? '',
+      author: User.fromJson(json['author']?? ''),
+      committer: User.fromJson(json['committer']?? ''),
       parents: (json['parents'] as List)
           .map((parent) => Parent.fromJson(parent))
-          .toList(),
+          .toList() ?? [],
     );
   }
 }
@@ -478,9 +499,9 @@ class Committer {
 
   factory Committer.fromJson(Map<String, dynamic> json) {
     return Committer(
-      name: json['name'],
-      email: json['email'],
-      date: json['date'],
+      name: json['name']?? '',
+      email: json['email']?? '',
+      date: json['date']?? '',
     );
   }
 
@@ -502,8 +523,8 @@ class Tree {
 
   factory Tree.fromJson(Map<String, dynamic> json) {
     return Tree(
-      sha: json['sha'],
-      url: json['url'],
+      sha: json['sha']?? '',
+      url: json['url']?? '',
     );
   }
 
@@ -528,10 +549,10 @@ class Verification {
 
   factory Verification.fromJson(Map<String, dynamic> json) {
     return Verification(
-      verified: json['verified'],
-      reason: json['reason'],
-      signature: json['signature'],
-      payload: json['payload'],
+      verified: json['verified']?? '',
+      reason: json['reason']?? '',
+      signature: json['signature']?? '',
+      payload: json['payload']?? '',
     );
   }
 
@@ -577,14 +598,14 @@ class CommitDetail {
 
   factory CommitDetail.fromJson(Map<String, dynamic> json, String sha) {
     return CommitDetail(
-      author: Author.fromJson(json['author']),
-      committer: Committer.fromJson(json['committer']),
-      message: json['message'],
-      tree: Tree.fromJson(json['tree']),
-      url: json['url'],
-      commentCount: json['comment_count'],
-      verification: Verification.fromJson(json['verification']),
-      sha: sha,
+      author: Author.fromJson(json['author']?? ''),
+      committer: Committer.fromJson(json['committer'] ?? ''),
+      message: json['message']?? '',
+      tree: Tree.fromJson(json['tree']?? ''),
+      url: json['url']?? '',
+      commentCount: json['comment_count']?? '',
+      verification: Verification.fromJson(json['verification']?? ''),
+      sha: sha ?? '',
     );
   }
 }

@@ -12,6 +12,7 @@
 //   }
 
 import 'dart:convert';
+import 'package:cm_2_git/views/show_kanban_name_dialog.dart';
 import 'package:cm_2_git/views/timeline_data.dart';
 import 'package:cm_2_git/views/tree_view.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ import '../services/local_storage_helper.dart';
 import '../services/mili.dart';
 import '../services/singleton_data.dart';
 import '../services/state_lifecycle_mixin.dart';
+import 'branch_graph_view.dart';
 import 'column_management_dialog.dart';
 import 'delete_dialog.dart';
 import 'github_stats_dialog.dart';
@@ -85,7 +87,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       print('Error parsing JSON: $e');
     }
   }
-
 
   void _addCard(String columnName) {
     showDialog(
@@ -330,12 +331,46 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     int i = 0;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kanban Board'),
+        title: ElevatedButton(
+          onPressed: () async {
+            String? name = await showNameDialog(context, kanbanBoard.name);
+            if (name != null) {
+              setState(() {
+                kanbanBoard.name = name;
+                LocalStorageHelper.saveValue(
+                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              });
+            } else {
+              print("Dialog was canceled.");
+            }
+          },
+          child: Text(
+            kanbanBoard.name,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshFiles,
             tooltip: 'Refresh Files',
+          ),
+          IconButton(
+            icon: const Icon(Icons.grain_outlined),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: singletonData.kPrimaryColor,
+                  title: Text('Branches'),
+                  content: BranchListScreen(),
+                ),
+              );
+            },
+            tooltip: 'Graphical Branches',
           ),
           IconButton(
             icon: const Icon(Icons.streetview_sharp),
@@ -444,7 +479,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                                 tooltip: 'Add a Card',
                                 icon: const Icon(Icons.add),
                                 onPressed: () {
-                                  if (column.maxCards == 0 || column.maxCards > column.cards.length) {
+                                  if (column.maxCards == 0 ||
+                                      column.maxCards > column.cards.length) {
                                     _addCard(column.name);
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
