@@ -29,8 +29,6 @@ import '../services/git_services.dart';
 import '../services/local_storage_helper.dart';
 import '../services/mili.dart';
 import '../services/singleton_data.dart';
-import '../services/state_lifecycle_mixin.dart';
-import 'branch_graph_view.dart';
 import 'column_management_dialog.dart';
 import 'delete_dialog.dart';
 import 'github_stats_dialog.dart';
@@ -359,20 +357,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             tooltip: 'Refresh Files',
           ),
           IconButton(
-            icon: const Icon(Icons.grain_outlined),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  backgroundColor: singletonData.kPrimaryColor,
-                  title: Text('Branches'),
-                  content: BranchListScreen(),
-                ),
-              );
-            },
-            tooltip: 'Graphical Branches',
-          ),
-          IconButton(
             icon: const Icon(Icons.streetview_sharp),
             onPressed: () {
               showDialog(
@@ -562,7 +546,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     var projJson = kanbanBoard.toJson();
     var encoded = jsonEncode(projJson);
 
-    downloadFile(encoded, 'Kanban Board');
+    downloadFile(encoded, kanbanBoard.name);
   }
 
   void _importKanban() {

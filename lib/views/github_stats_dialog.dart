@@ -30,7 +30,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
         fetchGitHubData('/stats/commit_activity'),
         fetchGitHubData('/stats/code_frequency'),
         fetchGitHubData('/stats/participation'),
-        fetchGitHubData('/stats/punch_card'),
+        //fetchGitHubData('/stats/punch_card'),
       ]);
 
       setState(() {
@@ -39,7 +39,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
           'commit_activity': responses[1],
           'code_frequency': responses[2],
           'participation': responses[3],
-          'punch_card': responses[4],
+          //'punch_card': responses[4],
         };
         isLoading = false;
       });
@@ -60,7 +60,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
       return json.decode(response.body);
     } else if (response.statusCode == 202) {
       // Retry after delay if status code is 202
-      await Future.delayed(Duration(seconds: 5));
+      await Future.delayed(const Duration(seconds: 5));
       return fetchGitHubData(endpoint);
     } else {
       print('Failed to load GitHub data. Status code: ${response.statusCode}, Response: ${response.body}'); // More details
@@ -71,24 +71,24 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('GitHub Statistics'),
+      title: const Text('GitHub Statistics'),
       content: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : DefaultTabController(
-        length: 5,
+        length: 4,
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
           height: MediaQuery.of(context).size.height * 0.7,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TabBar(
+              const TabBar(
                 tabs: [
                   Tab(text: 'Contributors'),
                   Tab(text: 'Commit Activity'),
                   Tab(text: 'Code Frequency'),
                   Tab(text: 'Participation'),
-                  Tab(text: 'Punch Card'),
+                  //Tab(text: 'Punch Card'),
                 ],
               ),
               Expanded(
@@ -98,7 +98,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
                     CommitActivityTab(data: stats['commit_activity'] ?? []),
                     CodeFrequencyTab(data: stats['code_frequency'] ?? []),
                     ParticipationTab(data: stats['participation'] ?? {}),
-                    PunchCardTab(data: stats['punch_card'] ?? []),
+                    //PunchCardTab(data: stats['punch_card'] ?? []),
                   ],
                 ),
               ),
@@ -111,7 +111,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: Text('Close'),
+          child: const Text('Close'),
         ),
       ],
     );
@@ -264,16 +264,16 @@ class PunchCardTab extends StatelessWidget {
               },
             ),
           ),
-          topTitles: AxisTitles(
+          topTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
-          rightTitles: AxisTitles(
+          rightTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
           ),
         ),
         barGroups: barGroups,
         borderData: FlBorderData(show: false),
-        gridData: FlGridData(show: false),
+        gridData: const FlGridData(show: false),
         alignment: BarChartAlignment.spaceBetween,
         maxY: data.map((e) => e[2] as int).reduce((a, b) => a > b ? a : b).toDouble() + 10,
       ),

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../main.dart';
+import 'file_history_dialog.dart';
 
 class GitHubFileTree extends StatefulWidget {
   final String githubUser;
@@ -168,14 +169,39 @@ class _GitHubFileTreeState extends State<GitHubFileTree> {
               : const Icon(Icons.insert_drive_file),
           title: Text(entry.value.first.path.split('/').last),
           subtitle: entry.value.first.type == 'blob' ? Text('SHA: ${entry.value.first.sha}') : null,
-          trailing: IconButton(
-            icon: const Icon(Icons.open_in_new),
-            onPressed: () => _showFileContent(entry.value.first.url),
+          trailing: SizedBox(
+            width: 80,
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: 'Open File',
+                  icon: const Icon(Icons.open_in_new),
+                  onPressed: () => _showFileContent(entry.value.first.url),
+                ),
+                IconButton(
+                  tooltip: 'Show File History',
+                  icon: const Icon(Icons.history),
+                  onPressed: () => _showCommitHistory(entry.value.first.path),
+                ),
+              ],
+            ),
           ),
           onTap: () => _openFile(entry.value.first.url),
         );
       }
     }).toList();
+  }
+
+  void _showCommitHistory(String filePath) {
+    showDialog(
+      context: context,
+      builder: (context) => FileHistoryDialog(
+        githubUser: widget.githubUser,
+        githubRepo: widget.githubRepo,
+        githubToken: widget.githubToken,
+        filePath: filePath,
+      ),
+    );
   }
 
   void _openFile(String url) {

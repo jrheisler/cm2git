@@ -287,21 +287,6 @@ class GitHubService {
       throw Exception('Failed to load pull requests');
     }
   }
-  Future<List<String>> fetchBranches() async {
-    var url = Uri.https('api.github.com', '/repos/$_repoOwner/$_repoName/branches');
-    var response = await http.get(url, headers: {
-      'Authorization': 'Bearer $_token',
-      'Accept': 'application/vnd.github.v3+json',
-    });
-
-    if (response.statusCode == 200) {
-      print(response.body);
-      List<dynamic> branchesJson = jsonDecode(response.body);
-      return branchesJson.map((branch) => branch['name'] as String).toList();
-    } else {
-      throw Exception('Failed to load branches: ${response.statusCode}');
-    }
-  }
 
   Future<List<GitBranch>> getBranches() async {
     final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/branches';
