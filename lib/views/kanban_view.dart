@@ -31,6 +31,7 @@ import '../services/mili.dart';
 import '../services/singleton_data.dart';
 import 'column_management_dialog.dart';
 import 'delete_dialog.dart';
+import 'git_log.dart';
 import 'github_stats_dialog.dart';
 import 'kanban_card_dialog.dart';
 import 'kanban_column_dialog.dart';
@@ -357,6 +358,20 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             tooltip: 'Refresh Files',
           ),
           IconButton(
+            icon: const Icon(Icons.list_alt_outlined),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => GitLogDialog(
+                  githubUser: 'jrheisler',
+                  githubToken: retrieveString(singletonData.cm2git),
+                  githubRepo: 'cm2git',
+                ),
+              );
+            },
+            tooltip: 'Show Git Log',
+          ),
+          IconButton(
             icon: const Icon(Icons.streetview_sharp),
             onPressed: () {
               showDialog(
@@ -546,7 +561,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     var projJson = kanbanBoard.toJson();
     var encoded = jsonEncode(projJson);
 
-    downloadFile(encoded, kanbanBoard.name);
+    downloadFile(encoded, '${kanbanBoard.name}.json');
   }
 
   void _importKanban() {
