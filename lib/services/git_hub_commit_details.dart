@@ -47,9 +47,9 @@ class CommitFile {
   }
 }
 
-Future<GitHubCommitDetails> fetchCommitDetails(String owner, String repo, String sha, String token) async {
+Future<GitHubCommitDetails> fetchCommitDetails(String owner, String repo, String sha, String token, String gitUrl) async {
   final response = await http.get(
-    Uri.parse('https://api.github.com/repos/$owner/$repo/commits/$sha'),
+    Uri.parse('$gitUrl/repos/$owner/$repo/commits/$sha'),
     headers: {
       'Authorization': 'token $token',
     },

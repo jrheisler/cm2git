@@ -1,3 +1,4 @@
+import 'package:cm_2_git/models/kanban_board.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
@@ -7,8 +8,9 @@ import 'file_history_dialog.dart';
 
 class CommitDetailsDialog extends StatelessWidget {
   final GitHubCommitDetails commitDetails;
+  final KanbanBoard kanbanBoard;
 
-  CommitDetailsDialog({required this.commitDetails});
+  CommitDetailsDialog({required this.commitDetails, required this.kanbanBoard});
 
   @override
   Widget build(BuildContext context) {
@@ -81,10 +83,11 @@ class CommitDetailsDialog extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => FileHistoryDialog(
-        githubUser: 'jrheisler',
-        githubToken: retrieveString(singletonData.cm2git),
-        githubRepo: 'cm2git',
+        githubUser: kanbanBoard.gitUser,
+        githubToken: retrieveString(kanbanBoard.gitString),
+        githubRepo: kanbanBoard.gitRepo,
         filePath: filePath,
+        githubUrl: kanbanBoard.gitUrl,
       ),
     );
   }

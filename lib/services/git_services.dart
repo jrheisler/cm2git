@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../main.dart';
 import '../models/branches.dart';
-
+/*
 class GitHubApi {
   final String baseUrl = "https://api.github.com";
   final String token;
@@ -212,7 +212,6 @@ class GitHubApi {
     return await http.get(Uri.parse('$baseUrl/octocat'), headers: headers);
   }
 }
-
 void mainGitHubApiUsage() async {
   // Replace 'YOUR_GITHUB_TOKEN' with your actual GitHub token.
   final gitHubApi = GitHubApi('YOUR_GITHUB_TOKEN');
@@ -229,6 +228,9 @@ void mainGitHubApiUsage() async {
     }
   }
 }
+
+*/
+
 
 //Explanation
 // GitHubService Class: This class handles the interaction with GitHub's API.
@@ -257,25 +259,27 @@ class GitHubService {
   final String _token;
   final String _repoOwner;
   final String _repoName;
+  final String _repoUrl;
 
-  GitHubService(this._token, this._repoOwner, this._repoName);
+  GitHubService(this._token, this._repoOwner, this._repoName, this._repoUrl);
 
-  Future<List<GitCommit>> getCommits() async {
-    final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/commits';
+ Future<List<GitCommit>> getCommits() async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/commits';
     final response = await http.get(
       Uri.parse(url),
+        //headers: {'Authorization': 'token $t'},
       headers: {'Authorization': 'token $_token'},
     );
     if (response.statusCode == 200) {
       final List<dynamic> commitList = json.decode(response.body);
       return commitList.map((commit) => GitCommit.fromJson(commit)).toList();
     } else {
-      throw Exception('Failed to load commits');
+      throw Exception('Failed to load the commits ${response.statusCode}');
     }
   }
 
   Future<List<GitPullRequest>> getPullRequests() async {
-    final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/pulls';
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/pulls';
     final response = await http.get(
       Uri.parse(url),
       headers: {'Authorization': 'token $_token'},
@@ -289,7 +293,7 @@ class GitHubService {
   }
 
   Future<List<GitBranch>> getBranches() async {
-    final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/branches';
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/branches';
     final response = await http.get(
       Uri.parse(url),
       headers: {'Authorization': 'token $_token'},
@@ -317,7 +321,7 @@ class GitHubService {
     required String base,
     required String body,
   }) async {
-    final url = 'https://api.github.com/repos/$_repoOwner/$_repoName/pulls';
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/pulls';
     final response = await http.post(
       Uri.parse(url),
       headers: {

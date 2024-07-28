@@ -10,12 +10,14 @@ class GitLogDialog extends StatefulWidget {
   final String githubUser;
   final String githubRepo;
   final String githubToken;
+  final String githubUrl;
 
   const GitLogDialog({
     Key? key,
     required this.githubUser,
     required this.githubRepo,
     required this.githubToken,
+    required this.githubUrl,
   }) : super(key: key);
 
   @override
@@ -33,7 +35,7 @@ class _GitLogDialogState extends State<GitLogDialog> {
   }
 
   Future<void> _fetchCommits() async {
-    final url = Uri.https('api.github.com', '/repos/${widget.githubUser}/${widget.githubRepo}/commits');
+    final url = Uri.https(widget.githubUrl.substring(8), '/repos/${widget.githubUser}/${widget.githubRepo}/commits');
     final response = await http.get(
       url,
       headers: {

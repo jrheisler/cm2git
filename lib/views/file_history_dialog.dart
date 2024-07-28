@@ -9,12 +9,14 @@ class FileHistoryDialog extends StatefulWidget {
   final String githubUser;
   final String githubRepo;
   final String githubToken;
+  final String githubUrl;
   final String filePath;
 
   const FileHistoryDialog({
     required this.githubUser,
     required this.githubRepo,
     required this.githubToken,
+    required this.githubUrl,
     required this.filePath,
     Key? key,
   }) : super(key: key);
@@ -34,8 +36,9 @@ class _FileHistoryDialogState extends State<FileHistoryDialog> {
   }
 
   Future<void> _fetchFileCommits() async {
+
     final response = await http.get(
-      Uri.https('api.github.com', '/repos/${widget.githubUser}/${widget.githubRepo}/commits', {
+      Uri.https(widget.githubUrl.substring(8), '/repos/${widget.githubUser}/${widget.githubRepo}/commits', {
         'path': widget.filePath,
       }),
       headers: {

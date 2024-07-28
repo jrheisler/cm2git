@@ -48,8 +48,7 @@ class KanbanBoardScreen extends StatefulWidget {
 class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   late KanbanBoard kanbanBoard;
   final ScrollController _scrollController = ScrollController();
-  final GitHubService _gitHubService = GitHubService(
-      retrieveString(singletonData.cm2git), 'jrheisler', 'cm2git');
+  late GitHubService _gitHubService;
   bool move = false;
 
   @override
@@ -274,6 +273,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
   Future<void> _refreshFiles() async {
     try {
+      _gitHubService = GitHubService(
+    retrieveString(kanbanBoard.gitString), kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
       final List<GitCommit> commits = await _gitHubService.getCommits();
       final List<GitPullRequest> pulls = await _gitHubService.getPullRequests();
       //final List<GitBranch> branches = await _gitHubService.getBranches();
@@ -332,10 +333,10 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       appBar: AppBar(
         title: ElevatedButton(
           onPressed: () async {
-            String? name = await showNameDialog(context, kanbanBoard.name);
-            if (name != null) {
+            KanbanBoard _kanbanBoard = (await showNameDialog(context, kanbanBoard))!;
+            if (_kanbanBoard != null) {
               setState(() {
-                kanbanBoard.name = name;
+                kanbanBoard = _kanbanBoard;
                 LocalStorageHelper.saveValue(
                     'kanban_board', jsonEncode(kanbanBoard.toJson()));
               });
@@ -344,7 +345,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             }
           },
           child: Text(
-            kanbanBoard.name,
+            '${kanbanBoard.name} - ${kanbanBoard.gitRepo}',
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -363,9 +364,10 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
               showDialog(
                 context: context,
                 builder: (context) => GitLogDialog(
-                  githubUser: 'jrheisler',
-                  githubToken: retrieveString(singletonData.cm2git),
-                  githubRepo: 'cm2git',
+                  githubUser: kanbanBoard.gitUser,
+                  githubToken: retrieveString(kanbanBoard.gitString),
+                  githubRepo: kanbanBoard.gitRepo,
+                  githubUrl: kanbanBoard.gitUrl,
                 ),
               );
             },
@@ -378,9 +380,10 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                   context: context,
                   builder: (context) {
                     return GitHubFileTree(
-                      githubUser: 'jrheisler',
-                      githubToken: retrieveString(singletonData.cm2git),
-                      githubRepo: 'cm2git',
+                      githubUser: kanbanBoard.gitUser,
+                      githubToken: retrieveString(kanbanBoard.gitString),
+                      githubRepo: kanbanBoard.gitRepo,
+                      githubUrl: kanbanBoard.gitUrl,
                     );
                   });
             },
@@ -404,8 +407,10 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 showDialog(
                   context: context,
                   builder: (context) => GitHubStatsDialog(
-                    owner: 'jrheisler',
-                    repo: 'cm2git',
+                    owner: kanbanBoard.gitUser,
+                    repo: kanbanBoard.gitRepo,
+                    gitUrl: kanbanBoard.gitUrl,
+                    gitString: kanbanBoard.gitString
                   ),
                 );
               }),

@@ -6,8 +6,11 @@ import 'package:fl_chart/fl_chart.dart';
 class GitHubStatsDialog extends StatefulWidget {
   final String owner;
   final String repo;
+  final String gitString;
+  final String gitUrl;
 
-  GitHubStatsDialog({required this.owner, required this.repo});
+
+  GitHubStatsDialog({required this.owner, required this.repo, required this.gitString, required this.gitUrl});
 
   @override
   _GitHubStatsDialogState createState() => _GitHubStatsDialogState();
@@ -52,7 +55,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
   }
 
   Future<dynamic> fetchGitHubData(String endpoint) async {
-    final url = 'https://api.github.com/repos/${widget.owner}/${widget.repo}$endpoint';
+    final url = '${widget.gitUrl}/repos/${widget.owner}/${widget.repo}$endpoint';
     print('Fetching data from: $url'); // Debug print
 
     final response = await http.get(Uri.parse(url));
@@ -198,10 +201,15 @@ class ParticipationTab extends StatelessWidget {
   Widget build(BuildContext context) {
     List<FlSpot> allSpots = [];
     List<FlSpot> ownerSpots = [];
+    try {
     for (var i = 0; i < (data['all'] as List).length; i++) {
       allSpots.add(FlSpot(i.toDouble(), (data['all'][i] as int).toDouble()));
       ownerSpots.add(FlSpot(i.toDouble(), (data['owner'][i] as int).toDouble()));
     }
+    } catch (e) {
+      print(210);
+    }
+
 
     return LineChart(LineChartData(
       lineBarsData: [

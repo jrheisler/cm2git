@@ -10,11 +10,13 @@ class GitHubFileTree extends StatefulWidget {
   final String githubUser;
   final String githubToken;
   final String githubRepo;
+  final String githubUrl;
 
   const GitHubFileTree({
     required this.githubUser,
     required this.githubToken,
     required this.githubRepo,
+    required this.githubUrl,
     Key? key,
   }) : super(key: key);
 
@@ -67,7 +69,7 @@ class _GitHubFileTreeState extends State<GitHubFileTree> {
 
   Future<List<String>> _fetchBranches() async {
     final response = await http.get(
-      Uri.https('api.github.com', '/repos/${widget.githubUser}/${widget.githubRepo}/branches'),
+      Uri.https(widget.githubUrl.substring(8), '/repos/${widget.githubUser}/${widget.githubRepo}/branches'),
       headers: {
         'Authorization': 'Bearer ${widget.githubToken}',
       },
@@ -84,7 +86,7 @@ class _GitHubFileTreeState extends State<GitHubFileTree> {
 
   Future<List<FileSystemEntity>> fetchFileSystem(String branch) async {
     final response = await http.get(
-      Uri.https('api.github.com', '/repos/${widget.githubUser}/${widget.githubRepo}/git/trees/$branch', {'recursive': 'true'}),
+      Uri.https(widget.githubUrl.substring(8), '/repos/${widget.githubUser}/${widget.githubRepo}/git/trees/$branch', {'recursive': 'true'}),
       headers: {
         'Authorization': 'Bearer ${widget.githubToken}',
       },
@@ -200,6 +202,7 @@ class _GitHubFileTreeState extends State<GitHubFileTree> {
         githubRepo: widget.githubRepo,
         githubToken: widget.githubToken,
         filePath: filePath,
+        githubUrl: widget.githubUrl,
       ),
     );
   }

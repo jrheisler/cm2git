@@ -66,7 +66,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   void _showCommitDetailsDialog(GitHubCommitDetails commitDetails) {
     showDialog(
       context: context,
-      builder: (context) => CommitDetailsDialog(commitDetails: commitDetails),
+      builder: (context) => CommitDetailsDialog(commitDetails: commitDetails, kanbanBoard: widget.kanban),
     );
   }
 
@@ -76,10 +76,11 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       String owner = singletonData.username;
       String repo = singletonData.repo;
       String sha = inSha;
-      String token = retrieveString(singletonData.cm2git);
+      String token = retrieveString(widget.kanban.gitString);
+      String gitUrl = widget.kanban.gitUrl;
 
       GitHubCommitDetails commitDetails =
-          await fetchCommitDetails(owner, repo, sha, token);
+          await fetchCommitDetails(owner, repo, sha, token, gitUrl);
       _showCommitDetailsDialog(commitDetails);
     } catch (e) {
       print('Error fetching commit details: $e');
