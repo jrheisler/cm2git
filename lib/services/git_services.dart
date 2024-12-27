@@ -1,236 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../main.dart';
-import '../models/branches.dart';
-/*
-class GitHubApi {
-  final String baseUrl = "https://api.github.com";
-  final String token;
-
-  GitHubApi(this.token);
-
-  Map<String, String> get headers => {
-        "Authorization": "token $token",
-        "Accept": "application/vnd.github.v3+json",
-      };
-
-  // User Endpoints
-  Future<http.Response> getAuthenticatedUser() async {
-    return await http.get(Uri.parse('$baseUrl/user'), headers: headers);
-  }
-
-  Future<http.Response> getUser(String username) async {
-    return await http.get(Uri.parse('$baseUrl/users/$username'),
-        headers: headers);
-  }
-
-  Future<http.Response> getAllUsers() async {
-    return await http.get(Uri.parse('$baseUrl/users'), headers: headers);
-  }
-
-  // Repository Endpoints
-  Future<http.Response> getAuthenticatedUserRepos() async {
-    return await http.get(Uri.parse('$baseUrl/user/repos'), headers: headers);
-  }
-
-  Future<http.Response> getUserRepos(String username) async {
-    return await http.get(Uri.parse('$baseUrl/users/$username/repos'),
-        headers: headers);
-  }
-
-  Future<http.Response> getRepo(String owner, String repo) async {
-    return await http.get(Uri.parse('$baseUrl/repos/$owner/$repo'),
-        headers: headers);
-  }
-
-  Future<http.Response> createRepo(Map<String, dynamic> data) async {
-    return await http.post(
-      Uri.parse('$baseUrl/user/repos'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  Future<http.Response> deleteRepo(String owner, String repo) async {
-    return await http.delete(Uri.parse('$baseUrl/repos/$owner/$repo'),
-        headers: headers);
-  }
-
-  // Issues Endpoints
-  Future<http.Response> getRepoIssues(String owner, String repo) async {
-    return await http.get(Uri.parse('$baseUrl/repos/$owner/$repo/issues'),
-        headers: headers);
-  }
-
-  Future<http.Response> getIssue(
-      String owner, String repo, int issueNumber) async {
-    return await http.get(
-        Uri.parse('$baseUrl/repos/$owner/$repo/issues/$issueNumber'),
-        headers: headers);
-  }
-
-  Future<http.Response> createIssue(
-      String owner, String repo, Map<String, dynamic> data) async {
-    return await http.post(
-      Uri.parse('$baseUrl/repos/$owner/$repo/issues'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  Future<http.Response> updateIssue(String owner, String repo, int issueNumber,
-      Map<String, dynamic> data) async {
-    return await http.patch(
-      Uri.parse('$baseUrl/repos/$owner/$repo/issues/$issueNumber'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  Future<http.Response> getIssueComments(
-      String owner, String repo, int issueNumber) async {
-    return await http.get(
-        Uri.parse('$baseUrl/repos/$owner/$repo/issues/$issueNumber/comments'),
-        headers: headers);
-  }
-
-  // Pull Requests Endpoints
-  Future<http.Response> getRepoPullRequests(String owner, String repo) async {
-    return await http.get(Uri.parse('$baseUrl/repos/$owner/$repo/pulls'),
-        headers: headers);
-  }
-
-  Future<http.Response> getPullRequest(
-      String owner, String repo, int pullNumber) async {
-    return await http.get(
-        Uri.parse('$baseUrl/repos/$owner/$repo/pulls/$pullNumber'),
-        headers: headers);
-  }
-
-  Future<http.Response> createPullRequest(
-      String owner, String repo, Map<String, dynamic> data) async {
-    return await http.post(
-      Uri.parse('$baseUrl/repos/$owner/$repo/pulls'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  Future<http.Response> updatePullRequest(String owner, String repo,
-      int pullNumber, Map<String, dynamic> data) async {
-    return await http.patch(
-      Uri.parse('$baseUrl/repos/$owner/$repo/pulls/$pullNumber'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  // Branches Endpoints
-  Future<http.Response> getRepoBranches(String owner, String repo) async {
-    return await http.get(Uri.parse('$baseUrl/repos/$owner/$repo/branches'),
-        headers: headers);
-  }
-
-  Future<http.Response> getBranch(
-      String owner, String repo, String branch) async {
-    return await http.get(
-        Uri.parse('$baseUrl/repos/$owner/$repo/branches/$branch'),
-        headers: headers);
-  }
-
-  // Commits Endpoints
-  Future<http.Response> getRepoCommits(String owner, String repo) async {
-    return await http.get(Uri.parse('$baseUrl/repos/$owner/$repo/commits'),
-        headers: headers);
-  }
-
-  Future<http.Response> getCommit(String owner, String repo, String ref) async {
-    return await http.get(Uri.parse('$baseUrl/repos/$owner/$repo/commits/$ref'),
-        headers: headers);
-  }
-
-  Future<http.Response> createCommitComment(
-      String owner, String repo, String ref, Map<String, dynamic> data) async {
-    return await http.post(
-      Uri.parse('$baseUrl/repos/$owner/$repo/commits/$ref/comments'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  // Gists Endpoints
-  Future<http.Response> getGists() async {
-    return await http.get(Uri.parse('$baseUrl/gists'), headers: headers);
-  }
-
-  Future<http.Response> getGist(String gistId) async {
-    return await http.get(Uri.parse('$baseUrl/gists/$gistId'),
-        headers: headers);
-  }
-
-  Future<http.Response> createGist(Map<String, dynamic> data) async {
-    return await http.post(
-      Uri.parse('$baseUrl/gists'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  Future<http.Response> updateGist(
-      String gistId, Map<String, dynamic> data) async {
-    return await http.patch(
-      Uri.parse('$baseUrl/gists/$gistId'),
-      headers: headers,
-      body: jsonEncode(data),
-    );
-  }
-
-  // Organizations Endpoints
-  Future<http.Response> getUserOrgs() async {
-    return await http.get(Uri.parse('$baseUrl/user/orgs'), headers: headers);
-  }
-
-  Future<http.Response> getOrg(String org) async {
-    return await http.get(Uri.parse('$baseUrl/orgs/$org'), headers: headers);
-  }
-
-  Future<http.Response> getOrgRepos(String org) async {
-    return await http.get(Uri.parse('$baseUrl/orgs/$org/repos'),
-        headers: headers);
-  }
-
-  // Miscellaneous Endpoints
-  Future<http.Response> getRateLimit() async {
-    return await http.get(Uri.parse('$baseUrl/rate_limit'), headers: headers);
-  }
-
-  Future<http.Response> getZen() async {
-    return await http.get(Uri.parse('$baseUrl/zen'), headers: headers);
-  }
-
-  Future<http.Response> getOctocat() async {
-    return await http.get(Uri.parse('$baseUrl/octocat'), headers: headers);
-  }
-}
-void mainGitHubApiUsage() async {
-  // Replace 'YOUR_GITHUB_TOKEN' with your actual GitHub token.
-  final gitHubApi = GitHubApi('YOUR_GITHUB_TOKEN');
-
-  // Fetch and print authenticated user details.
-  final response = await gitHubApi.getAuthenticatedUser();
-  if (response.statusCode == 200) {
-    if (singletonData.kDebugMode) {
-      print('User: ${response.body}');
-    }
-  } else {
-    if (singletonData.kDebugMode) {
-      print('Failed to fetch user: ${response.statusCode}');
-    }
-  }
-}
-
-*/
-
 
 //Explanation
 // GitHubService Class: This class handles the interaction with GitHub's API.
@@ -263,7 +32,137 @@ class GitHubService {
 
   GitHubService(this._token, this._repoOwner, this._repoName, this._repoUrl);
 
- Future<List<GitCommit>> getCommits() async {
+  // Helper: Make authenticated requests
+  Future<http.Response> _makeRequest(
+      String method,
+      String endpoint, {
+        Map<String, dynamic>? body,
+      }) async {
+    final url = Uri.parse('$_repoUrl/repos/$_repoOwner/$_repoName/$endpoint');
+    final headers = {
+      'Authorization': 'token $_token',
+      'Accept': 'application/vnd.github+json',
+    };
+
+    switch (method) {
+      case 'GET':
+        return await http.get(url, headers: headers);
+      case 'PUT':
+        return await http.put(url, headers: headers, body: jsonEncode(body));
+      case 'POST':
+        return await http.post(url, headers: headers, body: jsonEncode(body));
+      default:
+        throw Exception('Unsupported HTTP method: $method');
+    }
+  }
+
+  // Fetch file content
+  Future<Map<String, dynamic>> fetchFile(String path) async {
+    final response = await _makeRequest('GET', 'contents/$path');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch file $path: ${response.body}');
+    }
+  }
+
+  // Create or update file
+  Future<void> updateFile({
+    required String path,
+    required String content,
+    required String message,
+    String? sha,
+  }) async {
+    final body = {
+      'message': message,
+      'content': base64Encode(utf8.encode(content)),
+      if (sha != null) 'sha': sha,
+    };
+
+    final response = await _makeRequest('PUT', 'contents/$path', body: body);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to update file $path: ${response.body}');
+    }
+  }
+
+  // Create a branch
+  Future<void> createBranch(String newBranch, String baseBranch) async {
+    final baseBranchInfo = await fetchBranch(baseBranch);
+    final sha = baseBranchInfo['commit']['sha'];
+
+    final response = await _makeRequest('POST', 'git/refs', body: {
+      'ref': 'refs/heads/$newBranch',
+      'sha': sha,
+    });
+
+    if (response.statusCode != 201) {
+      throw Exception('Failed to create branch $newBranch: ${response.body}');
+    }
+  }
+
+  // Fetch branch info
+  Future<Map<String, dynamic>> fetchBranch(String branch) async {
+    final response = await _makeRequest('GET', 'branches/$branch');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch branch $branch: ${response.body}');
+    }
+  }
+
+  // List commits for a file
+  Future<List<Map<String, dynamic>>> listCommits({String? path}) async {
+    final endpoint = path != null ? 'commits?path=$path' : 'commits';
+    final response = await _makeRequest('GET', endpoint);
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to list commits: ${response.body}');
+    }
+  }
+  Future<Map<String, dynamic>> fetchBoard() async {
+    final boardFile = await fetchFile('board.json');
+    final content = utf8.decode(base64Decode(boardFile['content']));
+    return jsonDecode(content);
+  }
+
+  Future<void> saveBoard(Map<String, dynamic> board, {required String message}) async {
+    final content = jsonEncode(board);
+    final sha = await _getFileSha('board.json');
+    await updateFile(
+      path: 'board.json',
+      content: content,
+      message: message,
+      sha: sha,
+    );
+  }
+  Future<Map<String, dynamic>> fetchCard(String cardId) async {
+    final cardFile = await fetchFile('cards/card-$cardId.json');
+    final content = utf8.decode(base64Decode(cardFile['content']));
+    return jsonDecode(content);
+  }
+
+  Future<void> saveCard(String cardId, Map<String, dynamic> card, {required String message}) async {
+    final content = jsonEncode(card);
+    final sha = await _getFileSha('cards/card-$cardId.json');
+    await updateFile(
+      path: 'cards/card-$cardId.json',
+      content: content,
+      message: message,
+      sha: sha,
+    );
+  }
+  Future<String?> _getFileSha(String path) async {
+    try {
+      final file = await fetchFile(path);
+      return file['sha'];
+    } catch (e) {
+      return null; // File doesn't exist
+    }
+  }
+
+  Future<List<GitCommit>> getCommits() async {
     final url = '$_repoUrl/repos/$_repoOwner/$_repoName/commits';
     final response = await http.get(
       Uri.parse(url),

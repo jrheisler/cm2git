@@ -36,9 +36,16 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   late TextEditingController _needDateController;
   bool _blocked = false;
 
+
+
+
+
   @override
   void initState() {
     super.initState();
+    SingletonData().registerSetStateCallback(() {
+      setState(() {}); // Trigger a rebuild when the callback is invoked
+    });
     _titleController = TextEditingController(text: widget.card?.title ?? '');
     _descriptionController =
         TextEditingController(text: widget.card?.description ?? '');
@@ -60,6 +67,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     _descriptionController.dispose();
     _assigneeController.dispose();
     _needDateController.dispose();
+    SingletonData().kanbanCardDialogSetState = null;
     super.dispose();
   }
 

@@ -1,4 +1,5 @@
 //import 'package:encrypt/encrypt.dart';
+import 'package:cm_2_git/services/singleton_data.dart';
 import 'package:universal_html/html.dart';
 
 class LocalStorageHelper {

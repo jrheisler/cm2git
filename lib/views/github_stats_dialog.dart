@@ -74,7 +74,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('GitHub Statistics'),
+      title: Text('Git Statistics for ${widget.repo}'),
       content: isLoading
           ? const Center(child: CircularProgressIndicator())
           : DefaultTabController(

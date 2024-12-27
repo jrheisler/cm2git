@@ -31,7 +31,9 @@ import '../services/mili.dart';
 import '../services/singleton_data.dart';
 import 'column_management_dialog.dart';
 import 'delete_dialog.dart';
+import 'git_command_dialog.dart';
 import 'git_log.dart';
+import 'git_workflow_screen.dart';
 import 'github_stats_dialog.dart';
 import 'kanban_card_dialog.dart';
 import 'kanban_column_dialog.dart';
@@ -107,6 +109,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                   .add(KanbanDates(date: DateTime.now(), status: card.status));
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              SingletonData().isSaveNeeded = true;
             });
           },
         );
@@ -131,6 +134,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 'kanban_board',
                 jsonEncode(kanbanBoard.toJson()),
               );
+              SingletonData().isSaveNeeded = true;
               Navigator.of(context).pop();
             });
             setState(() {});
@@ -155,6 +159,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 'kanban_board',
                 jsonEncode(kanbanBoard.toJson()),
               );
+              SingletonData().isSaveNeeded = true;
             });
           },
         );
@@ -172,6 +177,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
               kanbanBoard.columns.add(column);
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              SingletonData().isSaveNeeded = true;
             });
           },
           onDelete: (deletedColumn) {
@@ -179,6 +185,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
               kanbanBoard.columns.remove(deletedColumn);
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              SingletonData().isSaveNeeded = true;
             });
           },
         );
@@ -198,6 +205,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
               kanbanBoard.columns[index] = updatedColumn;
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              SingletonData().isSaveNeeded = true;
             });
           },
           onDelete: (deletedColumn) {
@@ -205,6 +213,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
               kanbanBoard.columns.remove(deletedColumn);
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              SingletonData().isSaveNeeded = true;
             });
           },
         );
@@ -240,6 +249,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         targetColumn.cards.add(newCard);
         LocalStorageHelper.saveValue(
             'kanban_board', jsonEncode(kanbanBoard.toJson()));
+        SingletonData().isSaveNeeded = true;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -254,6 +264,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       kanbanBoard.columns.removeWhere((col) => col.id == column.id);
       LocalStorageHelper.saveValue(
           'kanban_board', jsonEncode(kanbanBoard.toJson()));
+      SingletonData().isSaveNeeded = true;
     });
   }
 
@@ -329,6 +340,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   @override
   Widget build(BuildContext context) {
     int i = 0;
+    _gitHubService = GitHubService(
+        retrieveString(kanbanBoard.gitString), kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
     return Scaffold(
       appBar: AppBar(
         title: ElevatedButton(
@@ -339,6 +352,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 kanbanBoard = _kanbanBoard;
                 LocalStorageHelper.saveValue(
                     'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                SingletonData().isSaveNeeded = true;
               });
             } else {
               print("Dialog was canceled.");
@@ -353,6 +367,18 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           ),
         ),
         actions: [
+          Center(
+            child: ElevatedButton(
+              onPressed: () =>  showGitWorkflowDialog(context, _gitHubService),
+              child: const Text("Run Git Commands"),
+            ),
+          ),
+          // Save to Git Icon
+          if (SingletonData().isSaveNeeded)
+            IconButton(
+              icon: const Icon(Icons.save, color: Colors.red),
+              onPressed: _saveToGit,
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshFiles,
@@ -561,7 +587,26 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       ),
     );
   }
+  void _saveToGit() {
+    // Split JSON into modular files
+    try {
+      Map<String, String> modularFiles = SingletonData().splitAllInOneJson();
+      // Logic to save modularFiles to Git
+      print("Saving to Git...");
+      // Example placeholder
+      print(modularFiles);
 
+      // Mark save as complete
+      setState(() {
+        SingletonData().clearSaveNeeded();
+      });
+    } catch (e) {
+      print("Error during save: $e");
+      setState(() {
+        SingletonData().clearSaveNeeded();
+      });
+    }
+  }
   void _downloadKanban() {
     var projJson = kanbanBoard.toJson();
     var encoded = jsonEncode(projJson);
