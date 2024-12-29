@@ -1,4 +1,3 @@
-
 import 'kanban_card.dart';
 
 class KanbanColumn {
@@ -33,5 +32,10 @@ class KanbanColumn {
       'cards': cards.map((e) => e.toJson()).toList(),
       'maxCards': maxCards,
     };
+  }
+
+  // Method to retrieve all modified cards in the column
+  List<KanbanCard> getModifiedCards() {
+    return cards.where((card) => card.isModified).toList();
   }
 }

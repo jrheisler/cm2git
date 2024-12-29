@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../models/kanban_board.dart';
+
 class SingletonData {
   // Private constructor
   SingletonData._privateConstructor();
@@ -25,7 +27,7 @@ class SingletonData {
   Color kShadowColor = Colors.white54;
   Color kPrimaryColor = Colors.deepPurple;
   bool kDebugMode = false;
-
+  late KanbanBoard kanbanBoard;
   // Holds the current local all-in-one JSON structure
   Map<String, dynamic> allInOneJson = {};
 
@@ -37,6 +39,13 @@ class SingletonData {
   /// Register a callback for setState
   void registerSetStateCallback(VoidCallback callback) {
     kanbanCardDialogSetState = callback;
+  }
+// Callback for setState
+  VoidCallback? kanbanViewSetState;
+
+  /// Register a callback for setState
+  void registerkanbanViewSetState(VoidCallback callback) {
+    kanbanViewSetState = callback;
   }
 
   // Save indicator

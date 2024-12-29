@@ -30,6 +30,7 @@ class _CommandButtonState extends State<CommandButton> {
       child: InkWell(
         onTap: widget.onPressed,
         onHover: (hovering) {
+          if (mounted)
           setState(() {
             isHovered = hovering;
           });

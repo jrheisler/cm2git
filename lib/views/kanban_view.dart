@@ -56,12 +56,14 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    print('dispose');
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
+    print('init');
     final kanbanData = LocalStorageHelper.getValue('kanban_board');
 
     try {
@@ -70,6 +72,12 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       kanbanBoard = KanbanBoard.fromData();
     }
 
+    SingletonData().kanbanBoard = kanbanBoard;
+    SingletonData().registerkanbanViewSetState(() {
+      setState(() {
+        print('set state kanban view');
+      }); // Trigger a rebuild when the callback is invoked
+    });
     _refreshFiles();
   }
 
@@ -109,6 +117,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                   .add(KanbanDates(date: DateTime.now(), status: card.status));
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              card.isModified = true;
               SingletonData().isSaveNeeded = true;
             });
           },
@@ -134,6 +143,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 'kanban_board',
                 jsonEncode(kanbanBoard.toJson()),
               );
+              card.isModified = true;
               SingletonData().isSaveNeeded = true;
               Navigator.of(context).pop();
             });
@@ -159,6 +169,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 'kanban_board',
                 jsonEncode(kanbanBoard.toJson()),
               );
+              updatedCard.isModified = true;
               SingletonData().isSaveNeeded = true;
             });
           },
@@ -239,7 +250,10 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             sha: card.sha ?? '',
             dates: card.dates,
             needDate: card.needDate,
-            blocked: card.blocked);
+            blocked: card.blocked,
+            isModified: true,
+        );
+
 
         KanbanDates kd =
             KanbanDates(date: DateTime.now(), status: targetColumn.name);
@@ -339,6 +353,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('-----------------------build-------------------------');
+    kanbanBoard = SingletonData().kanbanBoard;
     int i = 0;
     _gitHubService = GitHubService(
         retrieveString(kanbanBoard.gitString), kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
@@ -367,18 +383,18 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           ),
         ),
         actions: [
-          Center(
-            child: ElevatedButton(
-              onPressed: () =>  showGitWorkflowDialog(context, _gitHubService),
-              child: const Text("Run Git Commands"),
-            ),
-          ),
           // Save to Git Icon
           if (SingletonData().isSaveNeeded)
             IconButton(
               icon: const Icon(Icons.save, color: Colors.red),
               onPressed: _saveToGit,
+              tooltip: 'Save to Git',
             ),
+          IconButton(
+            icon: const Icon(Icons.integration_instructions_sharp, ),
+            onPressed: () =>showGitWorkflowDialog(context, _gitHubService),
+            tooltip: 'Git Integration',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshFiles,

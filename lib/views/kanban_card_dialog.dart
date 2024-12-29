@@ -37,9 +37,6 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   bool _blocked = false;
 
 
-
-
-
   @override
   void initState() {
     super.initState();

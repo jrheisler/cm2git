@@ -1,3 +1,5 @@
+import 'package:cm_2_git/models/kanban_board.dart';
+import 'package:cm_2_git/services/singleton_data.dart';
 import 'package:flutter/material.dart';
 
 import '../services/git_services.dart';
@@ -30,14 +32,17 @@ class _GitCommandDialogState extends State<GitCommandDialog> {
 
   Future<void> _processCommands() async {
     for (int i = 0; i < widget.commands.length; i++) {
+      if (mounted) {
       setState(() {
         currentCommandIndex = i;
         currentCommandDescription = widget.descriptions[i];
         commandOutput = "Processing...";
       });
+      }
 
       try {
         await widget.commands[i](); // Execute the command
+        if (mounted)
         setState(() {
           commandOutput = "Command completed successfully.";
         });
@@ -51,6 +56,7 @@ class _GitCommandDialogState extends State<GitCommandDialog> {
       await Future.delayed(const Duration(seconds: 1)); // Pause briefly before the next command
     }
 
+    if (mounted)
     setState(() {
       isProcessing = false; // Mark all commands as processed
     });
@@ -84,40 +90,41 @@ class _GitCommandDialogState extends State<GitCommandDialog> {
   }
 }
 
+KanbanBoard getCurrentKanbanBoard() {
+  // Example: Retrieve the board from a singleton or local storage
+  final kanbanBoard = SingletonData().kanbanBoard as KanbanBoard; // Ensure proper typing
+  return kanbanBoard;
+}
 
-void runGitCommands(BuildContext context, GitHubService githubService) {
-  showDialog(
+
+
+
+Future<String?> showKanbanBoardSelector(
+    BuildContext context, GitHubService githubService) async {
+  final boards = await githubService.listKanbanBoards(); // Fetch list of boards
+  return showDialog<String>(
     context: context,
-    builder: (context) => GitCommandDialog(
-      commands: [
-            () async {
-          final board = await githubService.fetchBoard();
-          print("Fetched board: $board");
-        },
-            () async {
-          await githubService.saveBoard({
-            "name": "Updated Kanban",
-            "columns": []
-          }, message: "Updated Kanban board");
-        },
-            () async {
-          final card = await githubService.fetchCard("12345");
-          print("Fetched card: $card");
-        },
-            () async {
-          await githubService.saveCard("12345", {
-            "id": "12345",
-            "title": "Updated Task",
-            "description": "Updated task details",
-          }, message: "Updated card details");
-        },
-      ],
-      descriptions: [
-        "Fetching Kanban board...",
-        "Saving Kanban board...",
-        "Fetching a specific card...",
-        "Saving updated card details...",
-      ],
-    ),
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Select Kanban Board"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: boards.map((board) {
+              return ListTile(
+                title: Text(board),
+                onTap: () => Navigator.of(context).pop(board),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Cancel"),
+          ),
+        ],
+      );
+    },
   );
 }

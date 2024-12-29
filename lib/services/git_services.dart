@@ -32,6 +32,134 @@ class GitHubService {
 
   GitHubService(this._token, this._repoOwner, this._repoName, this._repoUrl);
 
+  Future<List<String>> listKanbanBoards() async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/kanban_boards';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> files = json.decode(response.body);
+      return files.map((file) => file["name"] as String).toList();
+    } else {
+      throw Exception("Failed to list Kanban boards");
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchBoard(String boardName) async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/kanban_boards/$boardName';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+
+    print('URL: $url');
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      try {
+        final jsonResponse = json.decode(response.body);
+
+        // Check if 'content' exists and is properly encoded
+        if (jsonResponse.containsKey('content')) {
+          String content = jsonResponse['content'];
+
+          // Remove newline characters if present
+          content = content.replaceAll('\n', '');
+
+          if (jsonResponse['encoding'] == 'base64') {
+            // Decode Base64 content
+            final decodedContent = utf8.decode(base64.decode(content));
+
+            // Parse JSON from decoded content
+            return json.decode(decodedContent);
+          } else {
+            throw Exception('Unsupported encoding: ${jsonResponse['encoding']}');
+          }
+        } else {
+          throw Exception("Response does not contain 'content' field");
+        }
+      } catch (e) {
+        throw Exception('Error decoding board: $e');
+      }
+    } else {
+      throw Exception("Failed to fetch Kanban board: ${response.statusCode} - ${response.body}");
+    }
+  }
+
+
+
+
+  Future<void> saveBoard(Map<String, dynamic> board, {required String message}) async {
+    final boardName = board["name"];
+    final path = 'kanban_boards/$boardName.json';
+    final content = base64.encode(utf8.encode(json.encode(board)));
+
+    // Fetch the current SHA for the file
+    final sha = await _getFileSha(path);
+    print('$boardName');
+    final response = await http.put(
+      Uri.parse('$_repoUrl/repos/$_repoOwner/$_repoName/contents/$path'),
+      headers: {
+        'Authorization': 'token $_token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        "message": message,
+        "content": content,
+        if (sha != null) "sha": sha, // Include the SHA if the file already exists
+      }),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("Kanban board saved successfully");
+    } else {
+      throw Exception("Failed to save Kanban board - ${response.statusCode} - ${response.body}");
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchCard(String cardId) async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/cards/$cardId.json';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+
+    if (response.statusCode == 200) {
+      final decodedContent = json.decode(
+        utf8.decode(base64.decode(json.decode(response.body)["content"])),
+      );
+      return decodedContent;
+    } else {
+      throw Exception("Failed to fetch card");
+    }
+  }
+  Future<void> saveCard(String cardId, Map<String, dynamic> card, {required String message}) async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/cards/$cardId.json';
+    final content = base64.encode(utf8.encode(json.encode(card)));
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'token $_token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        "message": message,
+        "content": content,
+      }),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("Card saved successfully");
+    } else {
+      throw Exception("Failed to save card");
+    }
+  }
+
   // Helper: Make authenticated requests
   Future<http.Response> _makeRequest(
       String method,
@@ -120,38 +248,6 @@ class GitHubService {
     } else {
       throw Exception('Failed to list commits: ${response.body}');
     }
-  }
-  Future<Map<String, dynamic>> fetchBoard() async {
-    final boardFile = await fetchFile('board.json');
-    final content = utf8.decode(base64Decode(boardFile['content']));
-    return jsonDecode(content);
-  }
-
-  Future<void> saveBoard(Map<String, dynamic> board, {required String message}) async {
-    final content = jsonEncode(board);
-    final sha = await _getFileSha('board.json');
-    await updateFile(
-      path: 'board.json',
-      content: content,
-      message: message,
-      sha: sha,
-    );
-  }
-  Future<Map<String, dynamic>> fetchCard(String cardId) async {
-    final cardFile = await fetchFile('cards/card-$cardId.json');
-    final content = utf8.decode(base64Decode(cardFile['content']));
-    return jsonDecode(content);
-  }
-
-  Future<void> saveCard(String cardId, Map<String, dynamic> card, {required String message}) async {
-    final content = jsonEncode(card);
-    final sha = await _getFileSha('cards/card-$cardId.json');
-    await updateFile(
-      path: 'cards/card-$cardId.json',
-      content: content,
-      message: message,
-      sha: sha,
-    );
   }
   Future<String?> _getFileSha(String path) async {
     try {

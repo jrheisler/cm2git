@@ -1,7 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../common/command_button.dart';
+import '../models/kanban_board.dart';
+import '../models/kanban_card.dart';
 import '../services/git_services.dart';
+import '../services/local_storage_helper.dart';
+import '../services/singleton_data.dart';
 import 'git_command_dialog.dart';
 
 void showStyledGitWorkflowDialog(BuildContext context, GitHubService gitHubService) {
@@ -12,7 +18,7 @@ void showStyledGitWorkflowDialog(BuildContext context, GitHubService gitHubServi
     pageBuilder: (context, animation, secondaryAnimation) {
       return Center(
         child: Container(
-          constraints: BoxConstraints(
+          constraints: const BoxConstraints(
             minWidth: 600, // Minimum width for the dialog
             maxWidth: 800, // Maximum width (optional)
           ),
@@ -92,8 +98,20 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
         "icon": Icons.download,
         "tooltip": "Fetch the latest Kanban board from the repository.",
         "action": () async {
-          final board = await widget.githubService.fetchBoard();
-          print("Fetched board: $board");
+          // Open the selection dialog
+          final selectedBoard = await showKanbanBoardSelector(context, widget.githubService);
+
+          if (selectedBoard != null && selectedBoard.isNotEmpty) {
+            final boardName = selectedBoard.endsWith('.json') ? selectedBoard : '$selectedBoard.json';
+
+            final board = await widget.githubService.fetchBoard(boardName);
+            print("Fetched board: $board");
+            LocalStorageHelper.saveValue(
+                'kanban_board', jsonEncode(board));
+            SingletonData().kanbanBoard = KanbanBoard.fromJson(board);
+            SingletonData().kanbanViewSetState!();
+          }
+
         },
       },
       {
@@ -101,10 +119,20 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
         "icon": Icons.upload,
         "tooltip": "Save the current Kanban board to the repository.",
         "action": () async {
-          await widget.githubService.saveBoard({
-            "name": "Updated Kanban",
-            "columns": []
-          }, message: "Updated Kanban board");
+          try {
+            final currentBoard = SingletonData().kanbanBoard;
+            if (currentBoard != null) {
+              await widget.githubService.saveBoard(
+                currentBoard.toJson(),
+                message: "Saved Kanban board: ${currentBoard.name}",
+              );
+              print("Kanban board saved successfully: ${currentBoard.name}");
+            } else {
+              print("No Kanban board loaded to save.");
+            }
+          } catch (e) {
+            print("Error saving Kanban board: $e");
+          }
         },
       },
       {
@@ -112,23 +140,65 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
         "icon": Icons.description,
         "tooltip": "Fetch details of a specific card from the repository.",
         "action": () async {
-          final card = await widget.githubService.fetchCard("12345");
-          print("Fetched card: $card");
+          // Example: Get all card IDs from the current board
+          final currentBoard = SingletonData().kanbanBoard;
+          if (currentBoard != null) {
+            final cardIds = currentBoard.columns.expand((column) => column.cards.map((card) => card.id)).toList();
+            if (cardIds.isNotEmpty) {
+              try {
+                for (final cardId in cardIds) {
+                  final cardData = await widget.githubService.fetchCard(cardId.toString());
+                  final fetchedCard = KanbanCard.fromJson(cardData);
+                  // Update the local card data
+                  final targetColumn = currentBoard.columns.firstWhere((col) =>
+                      col.cards.any((card) => card.id == fetchedCard.id));
+                  final index = targetColumn.cards.indexWhere((card) => card.id == fetchedCard.id);
+                  targetColumn.cards[index] = fetchedCard;
+                  print("Fetched card: ${fetchedCard.title}");
+                }
+              } catch (e) {
+                print("Error fetching cards: $e");
+              }
+            } else {
+              print("No cards available to fetch.");
+            }
+          } else {
+            print("No Kanban board loaded.");
+          }
         },
       },
       {
-        "title": "Save Card",
+        "title": "Save Cards",
         "icon": Icons.save,
-        "tooltip": "Save updates to a specific card in the repository.",
+        "tooltip": "Save updates to cards in the repository.",
         "action": () async {
-          await widget.githubService.saveCard("12345", {
-            "id": "12345",
-            "title": "Updated Task",
-            "description": "Updated task details",
-          }, message: "Updated card details");
+          final currentBoard = SingletonData().kanbanBoard;
+          if (currentBoard != null) {
+            final modifiedCards = currentBoard.getModifiedCards();
+            if (modifiedCards.isNotEmpty) {
+              try {
+                for (final card in modifiedCards) {
+                  await widget.githubService.saveCard(
+                    card.id.toString(),
+                    card.toJson(),
+                    message: "Updated card: ${card.title}",
+                  );
+                  print("Saved card: ${card.title}");
+                }
+              } catch (e) {
+                print("Error saving cards: $e");
+              }
+            } else {
+              print("No modified cards to save.");
+            }
+          } else {
+            print("No Kanban board loaded.");
+          }
         },
       },
     ]);
+
+
 
     // Determine the largest button width
     WidgetsBinding.instance.addPostFrameCallback((_) {

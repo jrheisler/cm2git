@@ -1,4 +1,3 @@
-import 'package:cm_2_git/services/git_services.dart';
 
 class KanbanDates {
   DateTime date;
@@ -36,6 +35,9 @@ class KanbanCard {
   DateTime needDate;
   bool blocked;
 
+  // New property
+  bool isModified;
+
   KanbanCard({
     required this.id,
     required this.title,
@@ -49,12 +51,13 @@ class KanbanCard {
     this.dates = const [],
     required this.needDate,
     required this.blocked,
+    this.isModified = false, // Default to false
   });
 
   factory KanbanCard.fromJson(Map<String, dynamic> json) {
     var datesFromJson = json['dates'] as List? ?? [];
     List<KanbanDates> datesList =
-        datesFromJson.map((date) => KanbanDates.fromJson(date)).toList();
+    datesFromJson.map((date) => KanbanDates.fromJson(date)).toList();
     return KanbanCard(
       id: json['id'],
       title: json['title'],
@@ -70,6 +73,7 @@ class KanbanCard {
           ? DateTime.parse(json['need_date'])
           : DateTime.now(),
       blocked: json['blocked'] ?? false,
+      isModified: json['isModified'] ?? false, // Initialize from JSON
     );
   }
 
@@ -87,6 +91,19 @@ class KanbanCard {
       'dates': dates.map((date) => date.toJson()).toList(),
       'need_date': needDate.toIso8601String(),
       'blocked': blocked,
+      'isModified': isModified, // Include in JSON output
     };
   }
+
+  // Method to mark card as modified
+  void markAsModified() {
+    isModified = true;
+  }
+
+  // Method to reset modification state
+  void resetModified() {
+    isModified = false;
+  }
+
+
 }
