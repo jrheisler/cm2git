@@ -50,7 +50,6 @@ class KanbanBoardScreen extends StatefulWidget {
 class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   late KanbanBoard kanbanBoard;
   final ScrollController _scrollController = ScrollController();
-  late GitHubService _gitHubService;
   bool move = false;
   bool _isSaving = false; // Add this to your class as a state variable
   @override
@@ -79,6 +78,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       }); // Trigger a rebuild when the callback is invoked
     });
     _refreshFiles();
+    SingletonData().gitHubService = GitHubService(retrieveString(kanbanBoard.gitString),
+        kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
+
   }
 
   // Handle file open request from JavaScript
@@ -265,7 +267,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         SingletonData().isSaveNeeded = true;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
+      SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
         const SnackBar(
             content: Text("You can't add more cards to this column")),
       );
@@ -297,10 +299,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
   Future<void> _refreshFiles() async {
     try {
-      _gitHubService = GitHubService(retrieveString(kanbanBoard.gitString),
-          kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
-      final List<GitCommit> commits = await _gitHubService.getCommits();
-      final List<GitPullRequest> pulls = await _gitHubService.getPullRequests();
+      final List<GitCommit> commits = await SingletonData().gitHubService.getCommits();
+      final List<GitPullRequest> pulls = await SingletonData().gitHubService.getPullRequests();
       //final List<GitBranch> branches = await _gitHubService.getBranches();
       setState(() {
         for (var column in kanbanBoard.columns) {
@@ -339,7 +339,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           }
         }
 */
-        ScaffoldMessenger.of(context).showSnackBar(
+        SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
           const SnackBar(content: Text('Refreshed')),
         );
         LocalStorageHelper.saveValue(
@@ -355,8 +355,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     print('-----------------------build-------------------------');
     kanbanBoard = SingletonData().kanbanBoard;
     int i = 0;
-    _gitHubService = GitHubService(retrieveString(kanbanBoard.gitString),
-        kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
+
     return Stack(children: [
       Scaffold(
         appBar: AppBar(
@@ -395,7 +394,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
               icon: const Icon(
                 Icons.integration_instructions_sharp,
               ),
-              onPressed: () => showGitWorkflowDialog(context, _gitHubService),
+              onPressed: () => showGitWorkflowDialog(context, SingletonData().gitHubService),
               tooltip: 'Git Integration',
             ),
             IconButton(
@@ -624,7 +623,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       final currentBoard = SingletonData().kanbanBoard;
       if (currentBoard != null) {
         // Save the Kanban board
-        await _gitHubService.saveBoard(
+        await SingletonData().gitHubService.saveBoard(
           currentBoard.toJson(),
           message: "Committed Kanban board: ${currentBoard.name}",
         );
@@ -637,7 +636,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           try {
             // Fetch SHA if missing
             if (card.sha.isEmpty) {
-              card.sha = await _gitHubService.fetchFileSha(
+              card.sha = await SingletonData().gitHubService.fetchFileSha(
                   'cards/${card.id}.json') ?? "";
             }
 
@@ -647,7 +646,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
               print("Card ${card.id} exists. Updating the file with SHA: ${card.sha}");
             }
 
-            await _gitHubService.saveCard(
+            await SingletonData().gitHubService.saveCard(
               card.id.toString(),
               card.toJson(),
               message: "Updated card: ${card.title}",
@@ -660,7 +659,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           }
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
           const SnackBar(
             content: Text("Committed board and modified cards successfully."),
           ),
@@ -676,7 +675,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       }
     } catch (e) {
       print("Error committing board and cards: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
+      SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text("Error: $e"),
         ),
@@ -845,7 +844,7 @@ class KanbanCardWidget extends StatelessWidget {
   void _copyToClipboard(BuildContext context) {
     final text = 'Card ID: ${card.id}';
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
+    SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(content: Text('Copied to clipboard: $text')),
     );
   }

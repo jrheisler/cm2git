@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../main.dart';
+import '../services/singleton_data.dart';
 import 'file_history_dialog.dart';
 
 class GitHubFileTree extends StatefulWidget {
@@ -239,7 +240,7 @@ class _GitHubFileTreeState extends State<GitHubFileTree> {
               onPressed: () {
                 if (_fileContent.isNotEmpty) {
                   Clipboard.setData(ClipboardData(text: _fileContent));
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
                     const SnackBar(content: Text('Content copied to clipboard!')),
                   );
                 }

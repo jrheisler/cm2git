@@ -8,6 +8,7 @@ final SMReg smReg = SMReg();
 late SingletonData singletonData;
 
 
+
 void main() async{
   runApp(const MyApp());
 }
@@ -19,9 +20,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     singletonData = setSingles();
-    singletonData.version = '.210';
+    singletonData.version = '.222';
 
     return MaterialApp(
+      scaffoldMessengerKey: SingletonData().scaffoldMessengerKey,
       debugShowCheckedModeBanner: singletonData.kDebugMode,
       title: 'cm2git v ${singletonData.version}',
       themeMode: ThemeMode.dark,

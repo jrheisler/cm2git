@@ -139,19 +139,23 @@ class GitHubService {
     }
   }
 
-  Future<Map<String, dynamic>?> fetchBoardVersion(String commitId) async {
+  Future<Map<String, dynamic>?> fetchBoardVersion(String commitId, String boardName) async {
     final url =
         'https://api.github.com/repos/jrheisler/cm2git/contents/kanban_boards?ref=$commitId';
 
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url), headers: {'Authorization': 'token $_token'});
 
     if (response.statusCode == 200) {
       try {
         final responseJson = jsonDecode(response.body);
 
+        if (responseJson is! List) {
+          throw Exception("Expected a list of files but got: ${responseJson.runtimeType}");
+        }
+
         // Find the specific board JSON file in the commit
-        final boardFile = (responseJson as List).firstWhere(
-              (file) => file['name'] == 'Master_Kanban.json', // Replace with dynamic boardName if needed
+        final boardFile = responseJson.firstWhere(
+              (file) => file['name'] == boardName,
           orElse: () => null,
         );
 
@@ -160,14 +164,20 @@ class GitHubService {
         }
 
         // Fetch the file content
-        final fileUrl = boardFile['download_url'] as String;
-        final fileResponse = await http.get(Uri.parse(fileUrl));
+        final fileUrl = boardFile['download_url'];
+        if (fileUrl == null || fileUrl is! String) {
+          throw Exception("Invalid or missing 'download_url' for the board file.");
+        }
 
+        final fileResponse = await http.get(Uri.parse(fileUrl));
         if (fileResponse.statusCode == 200) {
           final decodedContent = jsonDecode(fileResponse.body);
-          return decodedContent as Map<String, dynamic>;
+          if (decodedContent is! Map<String, dynamic>) {
+            throw Exception("Invalid board data format: Expected a Map.");
+          }
+          return decodedContent;
         } else {
-          throw Exception("Failed to fetch board content from commit: ${fileResponse.statusCode}");
+          throw Exception("Failed to fetch board content: ${fileResponse.statusCode}");
         }
       } catch (e) {
         print("Error processing board version: $e");
@@ -489,6 +499,73 @@ class GitHubService {
       print('Response body: ${response.body}');
     }
   }
+  Future<Map<String, dynamic>> fetchCardVersion(String commitId, String cardId) async {
+    final url =
+        '$_repoUrl/repos/$_repoOwner/$_repoName/contents/cards/$cardId.json?ref=$commitId';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        final responseJson = jsonDecode(response.body);
+
+        // Ensure the content field is available
+        if (responseJson['content'] == null) {
+          throw Exception("Content field is null or missing.");
+        }
+
+        // Decode the Base64 content
+        final rawBase64Content = responseJson['content'] as String;
+        final cleanBase64Content = rawBase64Content.replaceAll(RegExp(r'\s+'), '');
+        final decodedBytes = base64.decode(cleanBase64Content);
+        final decodedContent = utf8.decode(decodedBytes);
+
+        // Parse and return the JSON content
+        return jsonDecode(decodedContent) as Map<String, dynamic>;
+      } catch (e) {
+        print("Error processing card version: $e");
+        throw Exception("Failed to process card version: $e");
+      }
+    } else {
+      throw Exception("Failed to fetch card version: ${response.statusCode}");
+    }
+  }
+
+  Future<List<Map<String, String>>> fetchCardHistory(String cardId) async {
+    final url =
+        '$_repoUrl/repos/$_repoOwner/$_repoName/commits?path=cards/$cardId.json';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        final responseJson = jsonDecode(response.body) as List;
+
+        // Extract relevant commit details
+        final history = responseJson.map((commit) {
+          return {
+            'commit': commit['sha'] as String,
+            'date': commit['commit']['committer']['date'] as String,
+            'message': commit['commit']['message'] as String,
+          };
+        }).toList();
+
+        return history;
+      } catch (e) {
+        print("Error processing card history: $e");
+        throw Exception("Failed to process card history: $e");
+      }
+    } else {
+      throw Exception("Failed to fetch card history: ${response.statusCode}");
+    }
+  }
+
 }
 void printBoardData(Map<String, dynamic> data, {String prefix = ''}) {
   data.forEach((key, value) {

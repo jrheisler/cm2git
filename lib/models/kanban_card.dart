@@ -105,5 +105,43 @@ class KanbanCard {
     isModified = false;
   }
 
+  void updateFromJson(Map<String, dynamic> cardVersion) {
+    // Update fields from the provided JSON
+    id = cardVersion['id'] ?? id;
+    title = cardVersion['title'] ?? title;
+    description = cardVersion['description'] ?? description;
+    status = cardVersion['status'] ?? status;
+    assignee = cardVersion['assignee'] ?? assignee;
+    sha = cardVersion['sha'] ?? sha;
+
+    // Update files, pulls, and branches if provided
+    files = cardVersion['files'] ?? files;
+    pulls = cardVersion['pulls'] ?? pulls;
+    branches = cardVersion['branches'] ?? branches;
+
+    // Update dates
+    if (cardVersion['dates'] != null) {
+      dates = (cardVersion['dates'] as List)
+          .map((date) => KanbanDates.fromJson(date))
+          .toList();
+    }
+
+    // Update needDate
+    if (cardVersion['need_date'] != null) {
+      try {
+        needDate = DateTime.parse(cardVersion['need_date']);
+      } catch (e) {
+        print("Failed to parse need_date: $e");
+      }
+    }
+
+    // Update blocked state
+    blocked = cardVersion['blocked'] ?? blocked;
+
+    // Set the card as modified
+    markAsModified();
+  }
+
+
 
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../models/kanban_board.dart';
+import 'git_services.dart';
 
 class SingletonData {
   // Private constructor
@@ -35,13 +36,16 @@ class SingletonData {
 
   // Callback for setState
   VoidCallback? kanbanCardDialogSetState;
-
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   /// Register a callback for setState
   void registerSetStateCallback(VoidCallback callback) {
     kanbanCardDialogSetState = callback;
   }
 // Callback for setState
   VoidCallback? kanbanViewSetState;
+
+  late GitHubService gitHubService;
+
 
   /// Register a callback for setState
   void registerkanbanViewSetState(VoidCallback callback) {

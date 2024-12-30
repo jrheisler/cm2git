@@ -2,6 +2,7 @@ import 'package:cm_2_git/models/kanban_board.dart';
 import 'package:cm_2_git/services/singleton_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../main.dart';
 import '../services/git_services.dart';
 
 class GitCommandDialog extends StatefulWidget {
@@ -129,101 +130,109 @@ Future<String?> showKanbanBoardSelector(
                         trailing: IconButton(
                           icon: const Icon(Icons.history),
                           onPressed: () async {
-                            // Fetch history for the selected board
-                            final history = await githubService.fetchBoardHistory(board);
+                            try {
+                              // Fetch history for the selected board
+                              final history = await githubService.fetchBoardHistory(board);
 
-                            // Define a date format
-                            final dateFormat = DateFormat(
-                                'MMMM d, y • h:mm a'); // Example: December 27, 2024 • 7:33 AM
+                              // Show history dialog
+                              final selectedCommit = await showDialog<String>(
+                                context: context,
+                                builder: (context) {
+                                  final dateFormat = DateFormat('MMMM d, y • h:mm a'); // Example: December 27, 2024 • 7:33 AM
 
-                            // Show history dialog
-                            final selectedCommit = await showDialog<String>(
-                              context: context,
-                              builder: (context) {
-                                return Dialog(
-                                  child: Container(
-                                    width: screenWidth * 0.8,
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          "History for $board",
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Expanded(
-                                          child: SingleChildScrollView(
-                                            child: Column(
-                                              children: history.map((commit) {
-                                                // Parse and format the date
-                                                String formattedDate;
-                                                try {
-                                                  final dateTimeUtc =
-                                                  DateTime.parse(commit['date'] ?? '')
-                                                      .toUtc();
-                                                  final dateTimeLocal =
-                                                  dateTimeUtc.toLocal(); // Convert to user's local timezone
-                                                  formattedDate =
-                                                      dateFormat.format(dateTimeLocal);
-                                                } catch (_) {
-                                                  formattedDate = 'Unknown date';
-                                                }
+                                  return Dialog(
+                                    child: Container(
+                                      width: screenWidth * 0.8,
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "History for $board",
+                                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Expanded(
+                                            child: SingleChildScrollView(
+                                              child: Column(
+                                                children: history.map((commit) {
+                                                  // Safely parse and format the date
+                                                  String formattedDate;
+                                                  try {
+                                                    final dateTimeUtc = DateTime.parse(commit['date'] ?? '').toUtc();
+                                                    final dateTimeLocal = dateTimeUtc.toLocal(); // Convert to user's local timezone
+                                                    formattedDate = dateFormat.format(dateTimeLocal);
+                                                  } catch (_) {
+                                                    formattedDate = 'Unknown date';
+                                                  }
 
-                                                return ListTile(
-                                                  title: Text(commit['message'] ??
-                                                      'No message'),
-                                                  subtitle: Text(formattedDate),
-                                                  onTap: () {
-                                                    Navigator.of(context)
-                                                        .pop(commit['commit']);
-                                                  },
-                                                );
-                                              }).toList(),
+                                                  final commitId = commit['commit'];
+                                                  if (commitId == null || commitId is! String) {
+                                                    return const ListTile(
+                                                      title: Text("Invalid commit data"),
+                                                    );
+                                                  }
+
+                                                  return ListTile(
+                                                    title: Text(commit['message'] ?? 'No message'),
+                                                    subtitle: Text(formattedDate),
+                                                    onTap: () {
+                                                      Navigator.of(context).pop(commitId); // Return the selected commit ID
+                                                    },
+                                                  );
+                                                }).toList(),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                          child: const Text("Close"),
-                                        ),
-                                      ],
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: const Text("Close"),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            );
+                                  );
+                                },
+                              );
 
-                            // If a commit is selected, fetch the board version
-                            if (selectedCommit != null) {
-                              try {
-                                final boardData =
-                                await githubService.fetchBoardVersion(
-                                    selectedCommit);
-                                Navigator.of(context).pop(boardData);
-                              } catch (e) {
-                                print("Error fetching board version: $e");
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text("Error"),
-                                      content: Text(
-                                          "Failed to fetch the selected board version. Error: $e"),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                          child: const Text("Close"),
+                              if (selectedCommit != null) {
+                                // Close the history dialog and proceed to fetch the selected board version
+                                Navigator.of(context).pop();
+
+                                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                                  try {
+                                    print("Fetching board version for commit: $selectedCommit");
+                                    final boardVersion =
+                                    await githubService.fetchBoardVersion(selectedCommit, board);
+
+                                    if (boardVersion != null) {
+                                      SingletonData().kanbanBoard = KanbanBoard.fromJson(boardVersion);
+                                      SingletonData().kanbanViewSetState?.call();
+
+                                      print("Board version loaded successfully.");
+                                      SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
+                                        SnackBar(
+                                          content: Text("Board updated to commit: $selectedCommit"),
                                         ),
-                                      ],
+                                      );
+                                    } else {
+                                      throw Exception("Board version not found for commit: $selectedCommit");
+                                    }
+                                  } catch (e) {
+                                    print("Error fetching board version: $e");
+                                    SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
+                                      SnackBar(
+                                        content: Text("Error loading board version: $e"),
+                                      ),
                                     );
-                                  },
-                                );
+                                  }
+                                });
                               }
+                            } catch (e) {
+                              print("Error fetching board history: $e");
+                              SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
+                                SnackBar(content: Text("Error fetching history: $e")),
+                              );
                             }
                           },
                         ),
@@ -245,7 +254,6 @@ Future<String?> showKanbanBoardSelector(
     },
   );
 }
-
 
 /*
 Future<String?> showKanbanBoardSelector(

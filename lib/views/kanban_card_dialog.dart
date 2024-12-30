@@ -1,5 +1,4 @@
 import 'package:cm_2_git/models/kanban_board.dart';
-import 'package:cm_2_git/views/timeline_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../main.dart';
@@ -36,7 +35,6 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   late TextEditingController _needDateController;
   bool _blocked = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -71,7 +69,8 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   void _showCommitDetailsDialog(GitHubCommitDetails commitDetails) {
     showDialog(
       context: context,
-      builder: (context) => CommitDetailsDialog(commitDetails: commitDetails, kanbanBoard: widget.kanban),
+      builder: (context) => CommitDetailsDialog(
+          commitDetails: commitDetails, kanbanBoard: widget.kanban),
     );
   }
 
@@ -136,6 +135,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       ),
     );
   }
+
   Widget _buildPullDetails() {
     if (widget.card == null || widget.card!.pulls.isEmpty) {
       return const Text('No Pulls');
@@ -179,6 +179,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       ),
     );
   }
+
   Widget _buildCommitDetails() {
     if (widget.card == null || widget.card!.files.isEmpty) {
       return const Text('No Commits');
@@ -268,7 +269,8 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                 },
               ),
               CheckboxListTile(
-              tileColor: _blocked ? Colors.redAccent: singletonData.kPrimaryColor,
+                tileColor:
+                    _blocked ? Colors.redAccent : singletonData.kPrimaryColor,
                 title: const Text('Blocked'),
                 value: _blocked,
                 onChanged: (bool? value) {
@@ -340,6 +342,192 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
           icon: const Icon(Icons.delete),
           onPressed: widget.onDelete,
         ),
+        IconButton(
+          icon: const Icon(Icons.history),
+          tooltip: 'View Card History',
+          onPressed: () async {
+            try {
+              final cardId = widget.card?.id?.toString() ?? '';
+              if (cardId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Invalid card ID.")),
+                );
+                return;
+              }
+
+              // Fetch history for the selected card
+              final history =
+                  await SingletonData().gitHubService.fetchCardHistory(cardId);
+
+              if (history.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text("No history available for this card.")),
+                );
+                return;
+              }
+
+              // Show history dialog
+              final selectedCommit = await showDialog<String>(
+                context: context,
+                builder: (context) {
+                  final screenWidth = MediaQuery.of(context).size.width;
+                  final dateFormat = DateFormat('MMMM d, y • h:mm a');
+
+                  return Dialog(
+                    child: Container(
+                      width: screenWidth * 0.8,
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "History for Card: ${widget.card?.title}",
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: history.map((commit) {
+                                  String formattedDate;
+                                  try {
+                                    final dateTimeUtc =
+                                        DateTime.parse(commit['date'] ?? '')
+                                            .toUtc();
+                                    final dateTimeLocal = dateTimeUtc.toLocal();
+                                    formattedDate =
+                                        dateFormat.format(dateTimeLocal);
+                                  } catch (_) {
+                                    formattedDate = 'Unknown date';
+                                  }
+
+                                  final commitId = commit['commit'];
+                                  if (commitId == null || commitId is! String) {
+                                    return const ListTile(
+                                        title: Text("Invalid commit data"));
+                                  }
+
+                                  return ListTile(
+                                    title:
+                                        Text(commit['message'] ?? 'No message'),
+                                    subtitle: Text(formattedDate),
+                                    onTap: () {
+                                      Navigator.of(context).pop(commitId);
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text("Cancel"),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+
+              if (selectedCommit != null) {
+                print("Fetching card version for commit: $selectedCommit");
+
+                final cardVersion = await SingletonData().gitHubService.fetchCardVersion(selectedCommit, cardId);
+
+                if (cardVersion == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Failed to load card version.")),
+                  );
+                  return;
+                }
+
+                // Show card details in a dialog
+                final action = await showDialog<String>(
+                  context: context,
+                  builder: (context) {
+                    return Dialog(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Card Details",
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 16),
+                            Expanded(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("ID: ${cardVersion['id']}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 8),
+                                    Text("Title: ${cardVersion['title']}"),
+                                    const SizedBox(height: 8),
+                                    Text("Description: ${cardVersion['description']}"),
+                                    const SizedBox(height: 8),
+                                    Text("Status: ${cardVersion['status']}"),
+                                    const SizedBox(height: 8),
+                                    Text("Assignee: ${cardVersion['assignee']}"),
+                                    const SizedBox(height: 8),
+                                    Text("Need Date: ${cardVersion['need_date']}"),
+                                    const SizedBox(height: 8),
+                                    Text("Blocked: ${cardVersion['blocked'] ? 'Yes' : 'No'}"),
+                                    const SizedBox(height: 16),
+                                    const Text("Files:"),
+                                    ...?cardVersion['files']?.map((file) => Text("- $file")).toList(),
+                                    const SizedBox(height: 16),
+                                    const Text("Branches:"),
+                                    ...?cardVersion['branches']?.map((branch) => Text("- $branch")).toList(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop("import"),
+                                  child: const Text("Import"),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop("cancel"),
+                                  child: const Text("Cancel"),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+
+                if (action == "import") {
+                  setState(() {
+                    widget.card!.updateFromJson(cardVersion);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Card version imported successfully.")),
+                  );
+                } else {
+                  print("Import canceled.");
+                }
+              }
+
+            } catch (e) {
+              print("Error fetching card history: $e");
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error loading card history: $e")),
+              );
+            }
+          },
+        )
       ],
     );
   }
