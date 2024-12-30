@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:html'; // For browser debugging
 import 'package:http/http.dart' as http;
+
+import '../models/kanban_board.dart';
 
 //Explanation
 // GitHubService Class: This class handles the interaction with GitHub's API.
@@ -46,52 +49,84 @@ class GitHubService {
       throw Exception("Failed to list Kanban boards");
     }
   }
+  bool isValidBase64(String base64String) {
+    final sanitized = sanitizeBase64(base64String);
+    final base64Pattern = r'^[A-Za-z0-9+/]*={0,2}$';
+    return RegExp(base64Pattern).hasMatch(sanitized);
+  }
 
-  Future<Map<String, dynamic>> fetchBoard(String boardName) async {
-    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/kanban_boards/$boardName';
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Authorization': 'token $_token'},
-    );
-
-    print('URL: $url');
-    print('Response Status: ${response.statusCode}');
-    print('Response Body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      try {
-        final jsonResponse = json.decode(response.body);
-
-        // Check if 'content' exists and is properly encoded
-        if (jsonResponse.containsKey('content')) {
-          String content = jsonResponse['content'];
-
-          // Remove newline characters if present
-          content = content.replaceAll('\n', '');
-
-          if (jsonResponse['encoding'] == 'base64') {
-            // Decode Base64 content
-            final decodedContent = utf8.decode(base64.decode(content));
-
-            // Parse JSON from decoded content
-            return json.decode(decodedContent);
-          } else {
-            throw Exception('Unsupported encoding: ${jsonResponse['encoding']}');
-          }
-        } else {
-          throw Exception("Response does not contain 'content' field");
-        }
-      } catch (e) {
-        throw Exception('Error decoding board: $e');
-      }
-    } else {
-      throw Exception("Failed to fetch Kanban board: ${response.statusCode} - ${response.body}");
-    }
+  String sanitizeBase64(String base64String) {
+    return base64String.replaceAll('\n', '').replaceAll('\r', '').trim();
   }
 
 
+  Future<Map<String, dynamic>> fetchBoard(String downloadUrl) async {
+    final url =
+        'https://api.github.com/repos/jrheisler/cm2git/contents/kanban_boards/$downloadUrl';
+    print("Fetching URL: $url");
 
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      try {
+        final responseJson = jsonDecode(response.body);
+
+        // Ensure the content field is available
+        if (responseJson['content'] == null) {
+          throw Exception("Content field is null or missing.");
+        }
+
+        // Clean and decode Base64 content
+        final rawBase64Content = responseJson['content'] as String;
+        final cleanBase64Content = rawBase64Content.replaceAll(RegExp(r'\s+'), '');
+
+        print("Cleaned Base64 Content Length: ${cleanBase64Content.length}");
+        print("Cleaned Base64 Content Preview: ${cleanBase64Content.substring(0, 100)}");
+
+        // Decode Base64 content
+        final decodedBytes = base64.decode(cleanBase64Content);
+        final decodedContent = utf8.decode(decodedBytes);
+
+        print("Decoded Content Length: ${decodedContent.length}");
+        print("Decoded Content Preview: ${decodedContent.substring(0, 100)}");
+
+        // Parse JSON
+        final boardData = jsonDecode(decodedContent) as Map<String, dynamic>;
+
+        // Log all top-level keys
+        print("Parsed JSON Keys: ${boardData.keys}");
+
+        // Validate 'columns' key
+        if (!boardData.containsKey('columns') || boardData['columns'] == null) {
+          throw Exception("Missing or null 'columns' field in parsed JSON.");
+        }
+        if (boardData['columns'] is! List) {
+          throw Exception("'columns' field is not a List. Found: ${boardData['columns'].runtimeType}");
+        }
+
+        // Debug each column
+        for (var i = 0; i < (boardData['columns'] as List).length; i++) {
+          final column = (boardData['columns'] as List)[i];
+          print("Column $i: ${column['name']}, Cards Count: ${column['cards'].length}");
+        }
+
+        print(113);
+        printBoardData(boardData);
+        return boardData;
+      } catch (e) {
+        print("Error processing response: $e");
+        throw Exception("Failed to process Kanban board response: $e");
+      }
+    } else {
+      throw Exception("Failed to fetch Kanban board: ${response.statusCode}");
+    }
+  }
+
+  /// Helper to check if a string is valid Base64
+  bool isBase64(String input) {
+    final base64Regex = RegExp(r'^[A-Za-z0-9+/]+={0,2}$');
+    return base64Regex.hasMatch(input);
+  }
 
   Future<void> saveBoard(Map<String, dynamic> board, {required String message}) async {
     final boardName = board["name"];
@@ -120,45 +155,105 @@ class GitHubService {
       throw Exception("Failed to save Kanban board - ${response.statusCode} - ${response.body}");
     }
   }
+  Future<String?> fetchFileSha(String path) async {
+    try {
+      final file = await fetchFile(path); // Assumes this fetches the file metadata
+      final sha = file['sha'];
+      print("Fetched SHA for $path: $sha");
+      return sha;
+    } catch (e) {
+      print("Error fetching SHA for $path: $e");
+      return null; // File doesn't exist or error occurred
+    }
+  }
+
+
 
   Future<Map<String, dynamic>> fetchCard(String cardId) async {
     final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/cards/$cardId.json';
+    print("Fetching card URL: $url");
+
     final response = await http.get(
       Uri.parse(url),
       headers: {'Authorization': 'token $_token'},
     );
 
     if (response.statusCode == 200) {
-      final decodedContent = json.decode(
-        utf8.decode(base64.decode(json.decode(response.body)["content"])),
-      );
-      return decodedContent;
+      try {
+        // Parse the JSON response
+        final responseJson = json.decode(response.body);
+        print("Response JSON Keys: ${responseJson.keys}");
+        final rawBase64Content = responseJson["content"];
+        print("Raw Base64 Content Length: ${rawBase64Content.length}");
+        print("Raw Base64 Content Preview: ${rawBase64Content.substring(0, 100)}");
+
+        // Clean the Base64 content
+        final cleanBase64Content = rawBase64Content.replaceAll(RegExp(r'\s+'), '');
+        print("Cleaned Base64 Content Length: ${cleanBase64Content.length}");
+        print("Cleaned Base64 Content Preview: ${cleanBase64Content.substring(0, 100)}");
+
+        // Decode the Base64 content
+        final decodedBytes = base64.decode(cleanBase64Content);
+        print("Decoded Bytes Length: ${decodedBytes.length}");
+        print("Decoded Bytes Preview: ${utf8.decode(decodedBytes).substring(0, 100)}");
+
+        // Decode the UTF-8 content
+        final decodedContent = json.decode(utf8.decode(decodedBytes));
+        print("Decoded JSON Keys: ${decodedContent.keys}");
+
+        return decodedContent;
+      } catch (e) {
+        print("Error decoding card content: $e");
+        throw Exception("Failed to decode card content: $e");
+      }
     } else {
+      print("Failed to fetch card with status code: ${response.statusCode}");
       throw Exception("Failed to fetch card");
     }
   }
+
+
   Future<void> saveCard(String cardId, Map<String, dynamic> card, {required String message}) async {
     final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/cards/$cardId.json';
     final content = base64.encode(utf8.encode(json.encode(card)));
 
-    final response = await http.put(
-      Uri.parse(url),
-      headers: {
-        'Authorization': 'token $_token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        "message": message,
-        "content": content,
-      }),
-    );
+    // Attempt to save the card
+    for (int attempt = 0; attempt < 3; attempt++) {
+      try {
+        final requestBody = {
+          "message": message,
+          "content": content,
+          if (card["sha"].isNotEmpty) "sha": card["sha"],
+        };
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      print("Card saved successfully");
-    } else {
-      throw Exception("Failed to save card");
+        final response = await http.put(
+          Uri.parse(url),
+          headers: {
+            'Authorization': 'token $_token',
+            'Content-Type': 'application/json',
+          },
+          body: json.encode(requestBody),
+        );
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          print("Card saved successfully: $cardId");
+          return;
+        } else if (response.statusCode == 409) {
+          // Handle conflict by fetching the latest SHA
+          final latestSha = await fetchFileSha('cards/$cardId.json');
+          card["sha"] = latestSha ?? "";
+          print("Conflict detected. Retrying with SHA: $latestSha");
+        } else {
+          throw Exception("Failed to save card: ${response.body}");
+        }
+      } catch (e) {
+        if (attempt == 2) {
+          throw Exception("Error saving card $cardId after multiple retries: $e");
+        }
+      }
     }
   }
+
 
   // Helper: Make authenticated requests
   Future<http.Response> _makeRequest(
@@ -339,6 +434,26 @@ class GitHubService {
     }
   }
 }
+void printBoardData(Map<String, dynamic> data, {String prefix = ''}) {
+  data.forEach((key, value) {
+    final fullKey = prefix.isNotEmpty ? '$prefix.$key' : key;
+    if (value is Map<String, dynamic>) {
+      print('Map: $fullKey');
+      printBoardData(value, prefix: fullKey); // Recursively print nested map
+    } else if (value is List) {
+      print('List: $fullKey (Length: ${value.length})');
+      for (var i = 0; i < value.length; i++) {
+        print('$fullKey[$i]: ${value[i] is Map<String, dynamic> ? "Nested Map" : value[i]}');
+        if (value[i] is Map<String, dynamic>) {
+          printBoardData(value[i] as Map<String, dynamic>, prefix: '$fullKey[$i]');
+        }
+      }
+    } else {
+      print('$fullKey: $value');
+    }
+  });
+}
+
 
 class GitBranch {
   String name;

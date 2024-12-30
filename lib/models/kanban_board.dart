@@ -19,27 +19,46 @@ class KanbanBoard {
   });
 
   factory KanbanBoard.fromJson(Map<String, dynamic> json) {
-    return KanbanBoard(
-      columns: (json['columns'] as List)
-          .map((column) => KanbanColumn.fromJson(column))
-          .toList(),
-      name: json['name'] ?? 'Kanban',
-      gitUrl: json['gitUrl'] ?? 'https://api.github.com',
-      gitUser: json['gitUser'] ?? 'jrheisler',
-      gitRepo: json['gitRepo'] ?? 'cm2git',
-      gitString: json['gitString'] ??
-          'iru]-24l;sfLJKPJasd2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dhjksakilkj809ja09sL',
-    );
+    if (!json.containsKey('columns') || json['columns'] == null) {
+      throw Exception("Missing or null 'columns' field in JSON.");
+    }
+
+    if (json['columns'] is! List) {
+      throw Exception(
+          "'columns' field is not a List. Found: ${json['columns'].runtimeType}");
+    }
+
+    try {
+      // Process columns
+      final columns = (json['columns'] as List)
+          .map((col) => KanbanColumn.fromJson(col as Map<String, dynamic>))
+          .toList();
+
+      return KanbanBoard(
+        columns: (json['columns'] as List)
+            .map((column) => KanbanColumn.fromJson(column))
+            .toList(),
+        name: json['name'] ?? 'Kanban',
+        gitUrl: json['gitUrl'] ?? 'https://api.github.com',
+        gitUser: json['gitUser'] ?? 'jrheisler',
+        gitRepo: json['gitRepo'] ?? 'cm2git',
+        gitString: json['gitString'] ??
+            'iru]-24l;sfLJKPJasd2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dhjksakilkj809ja09sL',
+      );
+    } catch (e) {
+      print("Error in KanbanBoard.fromJson: $e");
+      throw Exception("Failed to parse KanbanBoard JSON: $e");
+    }
   }
 
   Map<String, dynamic> toJson() => {
-    'name': name,
-    'columns': columns.map((column) => column.toJson()).toList(),
-    'gitUrl': gitUrl,
-    'gitRepo': gitRepo,
-    'gitUser': gitUser,
-    'gitString': gitString,
-  };
+        'name': name,
+        'columns': columns.map((column) => column.toJson()).toList(),
+        'gitUrl': gitUrl,
+        'gitRepo': gitRepo,
+        'gitUser': gitUser,
+        'gitString': gitString,
+      };
 
   factory KanbanBoard.fromData() {
     try {
@@ -49,7 +68,7 @@ class KanbanBoard {
         gitRepo: 'cm2git',
         gitUser: 'jrheisler',
         gitString:
-        'iru]-24l;sfLJKPJasd2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dhjksakilkj809ja09sL',
+            'iru]-24l;sfLJKPJasd2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dhjksakilkj809ja09sL',
         columns: [
           KanbanColumn(id: 1, name: 'Product Backlog', cards: [], maxCards: 0),
           KanbanColumn(id: 2, name: 'Sprint Backlog', cards: [], maxCards: 0),
@@ -64,7 +83,7 @@ class KanbanBoard {
         gitUrl: 'https://api.github.com',
         gitUser: 'jrheisler',
         gitString:
-        'iru]-24l;sfLJKPJasd2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dhjksakilkj809ja09sL',
+            'iru]-24l;sfLJKPJasd2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dhjksakilkj809ja09sL',
         gitRepo: 'cm2git',
         columns: [],
       );

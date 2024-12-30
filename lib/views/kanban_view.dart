@@ -603,7 +603,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       ),
     );
   }
-  void _saveToGit() {
+  void _saveToGit() async{
     // Split JSON into modular files
     try {
       Map<String, String> modularFiles = SingletonData().splitAllInOneJson();
@@ -648,6 +648,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             (loadEndEvent) async {
           var json = reader.result;
           kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
+          SingletonData().kanbanBoard = kanbanBoard;
           setState(() {
             LocalStorageHelper.saveValue(
                 'kanban_board', jsonEncode(kanbanBoard.toJson()));
