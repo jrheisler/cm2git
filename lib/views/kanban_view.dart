@@ -52,7 +52,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   final ScrollController _scrollController = ScrollController();
   late GitHubService _gitHubService;
   bool move = false;
-
+  bool _isSaving = false; // Add this to your class as a state variable
   @override
   void dispose() {
     _scrollController.dispose();
@@ -241,19 +241,18 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         }
 
         final newCard = KanbanCard(
-            id: card.id ?? DateTime.now().millisecondsSinceEpoch,
-            title: card.title,
-            description: card.description,
-            assignee: card.assignee,
-            status: targetColumn.name,
-            files: card.files ?? [],
-            sha: card.sha ?? '',
-            dates: card.dates,
-            needDate: card.needDate,
-            blocked: card.blocked,
-            isModified: true,
+          id: card.id ?? DateTime.now().millisecondsSinceEpoch,
+          title: card.title,
+          description: card.description,
+          assignee: card.assignee,
+          status: targetColumn.name,
+          files: card.files ?? [],
+          sha: card.sha ?? '',
+          dates: card.dates,
+          needDate: card.needDate,
+          blocked: card.blocked,
+          isModified: true,
         );
-
 
         KanbanDates kd =
             KanbanDates(date: DateTime.now(), status: targetColumn.name);
@@ -298,8 +297,8 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
   Future<void> _refreshFiles() async {
     try {
-      _gitHubService = GitHubService(
-    retrieveString(kanbanBoard.gitString), kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
+      _gitHubService = GitHubService(retrieveString(kanbanBoard.gitString),
+          kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
       final List<GitCommit> commits = await _gitHubService.getCommits();
       final List<GitPullRequest> pulls = await _gitHubService.getPullRequests();
       //final List<GitBranch> branches = await _gitHubService.getBranches();
@@ -356,270 +355,335 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     print('-----------------------build-------------------------');
     kanbanBoard = SingletonData().kanbanBoard;
     int i = 0;
-    _gitHubService = GitHubService(
-        retrieveString(kanbanBoard.gitString), kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
-    return Scaffold(
-      appBar: AppBar(
-        title: ElevatedButton(
-          onPressed: () async {
-            KanbanBoard _kanbanBoard = (await showNameDialog(context, kanbanBoard))!;
-            if (_kanbanBoard != null) {
-              setState(() {
-                kanbanBoard = _kanbanBoard;
-                LocalStorageHelper.saveValue(
-                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
-                SingletonData().isSaveNeeded = true;
-              });
-            } else {
-              print("Dialog was canceled.");
-            }
-          },
-          child: Text(
-            '${kanbanBoard.name} - ${kanbanBoard.gitRepo}',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+    _gitHubService = GitHubService(retrieveString(kanbanBoard.gitString),
+        kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
+    return Stack(children: [
+      Scaffold(
+        appBar: AppBar(
+          title: ElevatedButton(
+            onPressed: () async {
+              KanbanBoard _kanbanBoard =
+                  (await showNameDialog(context, kanbanBoard))!;
+              if (_kanbanBoard != null) {
+                setState(() {
+                  kanbanBoard = _kanbanBoard;
+                  LocalStorageHelper.saveValue(
+                      'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                  SingletonData().isSaveNeeded = true;
+                });
+              } else {
+                print("Dialog was canceled.");
+              }
+            },
+            child: Text(
+              '${kanbanBoard.name} - ${kanbanBoard.gitRepo}',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
-        actions: [
-          // Save to Git Icon
-          if (SingletonData().isSaveNeeded)
+          actions: [
+            // Save to Git Icon
+            if (SingletonData().isSaveNeeded)
+              IconButton(
+                icon: const Icon(Icons.save, color: Colors.red),
+                onPressed: _saveToGit,
+                tooltip: 'Save to Git',
+              ),
             IconButton(
-              icon: const Icon(Icons.save, color: Colors.red),
-              onPressed: _saveToGit,
-              tooltip: 'Save to Git',
+              icon: const Icon(
+                Icons.integration_instructions_sharp,
+              ),
+              onPressed: () => showGitWorkflowDialog(context, _gitHubService),
+              tooltip: 'Git Integration',
             ),
-          IconButton(
-            icon: const Icon(Icons.integration_instructions_sharp, ),
-            onPressed: () =>showGitWorkflowDialog(context, _gitHubService),
-            tooltip: 'Git Integration',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshFiles,
-            tooltip: 'Refresh Files',
-          ),
-          IconButton(
-            icon: const Icon(Icons.list_alt_outlined),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => GitLogDialog(
-                  githubUser: kanbanBoard.gitUser,
-                  githubToken: retrieveString(kanbanBoard.gitString),
-                  githubRepo: kanbanBoard.gitRepo,
-                  githubUrl: kanbanBoard.gitUrl,
-                ),
-              );
-            },
-            tooltip: 'Show Git Log',
-          ),
-          IconButton(
-            icon: const Icon(Icons.streetview_sharp),
-            onPressed: () {
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return GitHubFileTree(
-                      githubUser: kanbanBoard.gitUser,
-                      githubToken: retrieveString(kanbanBoard.gitString),
-                      githubRepo: kanbanBoard.gitRepo,
-                      githubUrl: kanbanBoard.gitUrl,
-                    );
-                  });
-            },
-            tooltip: 'Tree View',
-          ),
-          IconButton(
-            icon: const Icon(Icons.graphic_eq_sharp),
-            onPressed: () {
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return TimelineChart(kanban: kanbanBoard);
-                  });
-            },
-            tooltip: 'Timeline Chart',
-          ),
-          IconButton(
-              tooltip: 'Git Status',
-              icon: const Icon(Icons.auto_graph),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _refreshFiles,
+              tooltip: 'Refresh Files',
+            ),
+            IconButton(
+              icon: const Icon(Icons.list_alt_outlined),
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder: (context) => GitHubStatsDialog(
-                    owner: kanbanBoard.gitUser,
-                    repo: kanbanBoard.gitRepo,
-                    gitUrl: kanbanBoard.gitUrl,
-                    gitString: kanbanBoard.gitString
+                  builder: (context) => GitLogDialog(
+                    githubUser: kanbanBoard.gitUser,
+                    githubToken: retrieveString(kanbanBoard.gitString),
+                    githubRepo: kanbanBoard.gitRepo,
+                    githubUrl: kanbanBoard.gitUrl,
                   ),
                 );
-              }),
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: _downloadKanban,
-            tooltip: 'Download Kanban',
-          ),
-          IconButton(
-            icon: const Icon(Icons.import_export_sharp),
-            onPressed: _importKanban,
-            tooltip: 'Import a Kanban From File',
-          ),
-          IconButton(
-            icon: const Icon(Icons.view_column),
-            onPressed: _manageColumns,
-            tooltip: 'Manage Columns',
-          ),
-          SizedBox(
-            width: 40,
-            child: Tooltip(
-              message: move ? 'Turn Drag/Drop off' : 'Turn Drag/Drop on',
-              child: Checkbox(
-                  value: move,
-                  onChanged: (b) {
-                    setState(() {
-                      move = b!;
-                    });
-                  }),
+              },
+              tooltip: 'Show Git Log',
             ),
-          ),
-          const SizedBox(
-            width: 20,
-          ),
-        ],
-      ),
-      body: Scrollbar(
-        thickness: 12,
-        controller: _scrollController,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
+            IconButton(
+              icon: const Icon(Icons.streetview_sharp),
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return GitHubFileTree(
+                        githubUser: kanbanBoard.gitUser,
+                        githubToken: retrieveString(kanbanBoard.gitString),
+                        githubRepo: kanbanBoard.gitRepo,
+                        githubUrl: kanbanBoard.gitUrl,
+                      );
+                    });
+              },
+              tooltip: 'Tree View',
+            ),
+            IconButton(
+              icon: const Icon(Icons.graphic_eq_sharp),
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return TimelineChart(kanban: kanbanBoard);
+                    });
+              },
+              tooltip: 'Timeline Chart',
+            ),
+            IconButton(
+                tooltip: 'Git Status',
+                icon: const Icon(Icons.auto_graph),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => GitHubStatsDialog(
+                        owner: kanbanBoard.gitUser,
+                        repo: kanbanBoard.gitRepo,
+                        gitUrl: kanbanBoard.gitUrl,
+                        gitString: kanbanBoard.gitString),
+                  );
+                }),
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: _downloadKanban,
+              tooltip: 'Download Kanban',
+            ),
+            IconButton(
+              icon: const Icon(Icons.import_export_sharp),
+              onPressed: _importKanban,
+              tooltip: 'Import a Kanban From File',
+            ),
+            IconButton(
+              icon: const Icon(Icons.view_column),
+              onPressed: _manageColumns,
+              tooltip: 'Manage Columns',
+            ),
+            SizedBox(
+              width: 40,
+              child: Tooltip(
+                message: move ? 'Turn Drag/Drop off' : 'Turn Drag/Drop on',
+                child: Checkbox(
+                    value: move,
+                    onChanged: (b) {
+                      setState(() {
+                        move = b!;
+                      });
+                    }),
+              ),
+            ),
+            const SizedBox(
+              width: 20,
+            ),
+          ],
+        ),
+        body: Scrollbar(
+          thickness: 12,
           controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: kanbanBoard.columns.map((column) {
-              i++;
-              return Container(
-                decoration: newBoxDec(),
-                width: 300,
-                margin: const EdgeInsets.all(8),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => _editColumn(column),
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(
-                              column.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: kanbanBoard.columns.map((column) {
+                i++;
+                return Container(
+                  decoration: newBoxDec(),
+                  width: 300,
+                  margin: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => _editColumn(column),
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Text(
+                                column.name,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        i == 1
-                            ? IconButton(
-                                tooltip: 'Add a Card',
-                                icon: const Icon(Icons.add),
-                                onPressed: () {
-                                  if (column.maxCards == 0 ||
-                                      column.maxCards > column.cards.length) {
-                                    _addCard(column.name);
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              "You can't add more cards to this column")),
-                                    );
-                                  }
-                                },
-                              )
-                            : IconButton(
-                                tooltip:
-                                    'You can only add cards to the first column',
-                                icon: const Icon(
-                                    color: Colors.black45,
-                                    Icons.check_box_outline_blank),
-                                onPressed: () => setState(() {}),
-                              ),
-                        Text(
-                          '${column.cards.length}/${column.maxCards}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                          i == 1
+                              ? IconButton(
+                                  tooltip: 'Add a Card',
+                                  icon: const Icon(Icons.add),
+                                  onPressed: () {
+                                    if (column.maxCards == 0 ||
+                                        column.maxCards > column.cards.length) {
+                                      _addCard(column.name);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                "You can't add more cards to this column")),
+                                      );
+                                    }
+                                  },
+                                )
+                              : IconButton(
+                                  tooltip:
+                                      'You can only add cards to the first column',
+                                  icon: const Icon(
+                                      color: Colors.black45,
+                                      Icons.check_box_outline_blank),
+                                  onPressed: () => setState(() {}),
+                                ),
+                          Text(
+                            '${column.cards.length}/${column.maxCards}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const Divider(),
-                    Expanded(
-                      child: DragTarget<KanbanCard>(
-                        onWillAccept: (card) => true,
-                        onAccept: (card) {
-                          _onCardDropped(card, column);
-                        },
-                        builder: (context, candidateData, rejectedData) {
-                          return ListView(
-                            children: column.cards.map((card) {
-                              if (move) {
-                                return Draggable<KanbanCard>(
-                                  data: card,
-                                  feedback: Material(
+                        ],
+                      ),
+                      const Divider(),
+                      Expanded(
+                        child: DragTarget<KanbanCard>(
+                          onWillAccept: (card) => true,
+                          onAccept: (card) {
+                            _onCardDropped(card, column);
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            return ListView(
+                              children: column.cards.map((card) {
+                                if (move) {
+                                  return Draggable<KanbanCard>(
+                                    data: card,
+                                    feedback: Material(
+                                      child: KanbanCardWidget(
+                                        card: card,
+                                        onEdit: () {},
+                                      ),
+                                    ),
+                                    childWhenDragging: Container(),
                                     child: KanbanCardWidget(
                                       card: card,
-                                      onEdit: () {},
+                                      onEdit: () {
+                                        _editCard(card);
+                                      },
                                     ),
-                                  ),
-                                  childWhenDragging: Container(),
-                                  child: KanbanCardWidget(
+                                  );
+                                } else {
+                                  return KanbanCardWidget(
                                     card: card,
                                     onEdit: () {
                                       _editCard(card);
                                     },
-                                  ),
-                                );
-                              } else {
-                                return KanbanCardWidget(
-                                  card: card,
-                                  onEdit: () {
-                                    _editCard(card);
-                                  },
-                                );
-                              }
-                            }).toList(),
-                          );
-                        },
+                                  );
+                                }
+                              }).toList(),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),
-    );
+      if (_isSaving)
+        Container(
+          color: Colors.black54, // Semi-transparent background
+          child: const Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+    ]);
   }
-  void _saveToGit() async{
-    // Split JSON into modular files
-    try {
-      Map<String, String> modularFiles = SingletonData().splitAllInOneJson();
-      // Logic to save modularFiles to Git
-      print("Saving to Git...");
-      // Example placeholder
-      print(modularFiles);
 
-      // Mark save as complete
-      setState(() {
-        SingletonData().clearSaveNeeded();
-      });
+  void _saveToGit() async {
+    setState(() {
+      _isSaving = true; // Show the progress indicator
+    });
+
+    try {
+      final currentBoard = SingletonData().kanbanBoard;
+      if (currentBoard != null) {
+        // Save the Kanban board
+        await _gitHubService.saveBoard(
+          currentBoard.toJson(),
+          message: "Committed Kanban board: ${currentBoard.name}",
+        );
+
+        // Save all modified cards
+        final modifiedCards = currentBoard.getModifiedCards();
+        for (final card in modifiedCards) {
+          print("Preparing to save card: ${card.toJson()}");
+
+          try {
+            // Fetch SHA if missing
+            if (card.sha.isEmpty) {
+              card.sha = await _gitHubService.fetchFileSha(
+                  'cards/${card.id}.json') ?? "";
+            }
+
+            if (card.sha.isEmpty) {
+              print("Card ${card.id} does not exist on GitHub. Creating a new file.");
+            } else {
+              print("Card ${card.id} exists. Updating the file with SHA: ${card.sha}");
+            }
+
+            await _gitHubService.saveCard(
+              card.id.toString(),
+              card.toJson(),
+              message: "Updated card: ${card.title}",
+            );
+
+            print("Card saved successfully: ${card.id}");
+          } catch (e) {
+            print("Error saving card ${card.id}: $e");
+            throw Exception("Failed to save card: ${card.id}");
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Committed board and modified cards successfully."),
+          ),
+        );
+
+        setState(() {
+          resetCardsNotModified(currentBoard);
+        });
+
+        print("Committed board and modified cards successfully.");
+      } else {
+        print("No Kanban board loaded to commit.");
+      }
     } catch (e) {
-      print("Error during save: $e");
+      print("Error committing board and cards: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: $e"),
+        ),
+      );
+    } finally {
       setState(() {
-        SingletonData().clearSaveNeeded();
+        _isSaving = false; // Hide the progress indicator
       });
     }
   }
@@ -657,6 +721,21 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       },
     );
   }
+}
+
+void resetCardsNotModified(KanbanBoard kanbanBoard) {
+  if (kanbanBoard == null) {
+    print("KanbanBoard is null, nothing to reset.");
+    return;
+  }
+
+  for (final column in kanbanBoard.columns) {
+    for (final card in column.cards) {
+      card.isModified = false;
+    }
+  }
+  SingletonData().isSaveNeeded = false;
+  print("All cards in the Kanban board have been reset to not modified.");
 }
 
 class KanbanColumnWidget extends StatelessWidget {
