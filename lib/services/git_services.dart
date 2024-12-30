@@ -63,7 +63,6 @@ class GitHubService {
   Future<Map<String, dynamic>> fetchBoard(String downloadUrl) async {
     final url =
         'https://api.github.com/repos/jrheisler/cm2git/contents/kanban_boards/$downloadUrl';
-    print("Fetching URL: $url");
 
     final response = await http.get(Uri.parse(url));
 
@@ -80,21 +79,13 @@ class GitHubService {
         final rawBase64Content = responseJson['content'] as String;
         final cleanBase64Content = rawBase64Content.replaceAll(RegExp(r'\s+'), '');
 
-        print("Cleaned Base64 Content Length: ${cleanBase64Content.length}");
-        print("Cleaned Base64 Content Preview: ${cleanBase64Content.substring(0, 100)}");
-
         // Decode Base64 content
         final decodedBytes = base64.decode(cleanBase64Content);
         final decodedContent = utf8.decode(decodedBytes);
 
-        print("Decoded Content Length: ${decodedContent.length}");
-        print("Decoded Content Preview: ${decodedContent.substring(0, 100)}");
 
         // Parse JSON
         final boardData = jsonDecode(decodedContent) as Map<String, dynamic>;
-
-        // Log all top-level keys
-        print("Parsed JSON Keys: ${boardData.keys}");
 
         // Validate 'columns' key
         if (!boardData.containsKey('columns') || boardData['columns'] == null) {
@@ -107,10 +98,8 @@ class GitHubService {
         // Debug each column
         for (var i = 0; i < (boardData['columns'] as List).length; i++) {
           final column = (boardData['columns'] as List)[i];
-          print("Column $i: ${column['name']}, Cards Count: ${column['cards'].length}");
         }
 
-        print(113);
         printBoardData(boardData);
         return boardData;
       } catch (e) {
@@ -119,6 +108,73 @@ class GitHubService {
       }
     } else {
       throw Exception("Failed to fetch Kanban board: ${response.statusCode}");
+    }
+  }
+  Future<List<Map<String, String>>> fetchBoardHistory(String boardName) async {
+    final url =
+        'https://api.github.com/repos/jrheisler/cm2git/commits?path=kanban_boards/$boardName';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      try {
+        final responseJson = jsonDecode(response.body) as List;
+
+        // Extract relevant commit details
+        final history = responseJson.map((commit) {
+          return {
+            'commit': commit['sha'] as String,
+            'date': commit['commit']['committer']['date'] as String,
+            'message': commit['commit']['message'] as String,
+          };
+        }).toList();
+
+        return history;
+      } catch (e) {
+        print("Error processing commit history: $e");
+        throw Exception("Failed to process commit history: $e");
+      }
+    } else {
+      throw Exception("Failed to fetch commit history: ${response.statusCode}");
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchBoardVersion(String commitId) async {
+    final url =
+        'https://api.github.com/repos/jrheisler/cm2git/contents/kanban_boards?ref=$commitId';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      try {
+        final responseJson = jsonDecode(response.body);
+
+        // Find the specific board JSON file in the commit
+        final boardFile = (responseJson as List).firstWhere(
+              (file) => file['name'] == 'Master_Kanban.json', // Replace with dynamic boardName if needed
+          orElse: () => null,
+        );
+
+        if (boardFile == null) {
+          throw Exception("Kanban board not found in the specified commit.");
+        }
+
+        // Fetch the file content
+        final fileUrl = boardFile['download_url'] as String;
+        final fileResponse = await http.get(Uri.parse(fileUrl));
+
+        if (fileResponse.statusCode == 200) {
+          final decodedContent = jsonDecode(fileResponse.body);
+          return decodedContent as Map<String, dynamic>;
+        } else {
+          throw Exception("Failed to fetch board content from commit: ${fileResponse.statusCode}");
+        }
+      } catch (e) {
+        print("Error processing board version: $e");
+        throw Exception("Failed to process board version: $e");
+      }
+    } else {
+      throw Exception("Failed to fetch board version: ${response.statusCode}");
     }
   }
 

@@ -195,14 +195,6 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
                         .firstWhereOrNull((col) => col.cards.any((card) => card.id == fetchedCard.id));
 
                     if (targetColumn != null) {
-                      // Proceed with updates
-                    } else {
-                      print("Target column not found for card ID: ${fetchedCard.id}");
-                    }
-
-
-
-                    if (targetColumn != null) {
                       final index = targetColumn.cards.indexWhere((card) => card.id == fetchedCard.id);
                       if (index != -1) {
                         targetColumn.cards[index] = fetchedCard;
@@ -231,6 +223,7 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
             print("Error refreshing board and cards: $e");
           }
         }
+
       },
     ]);
 
