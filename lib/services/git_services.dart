@@ -51,9 +51,24 @@ class GitHubService {
   }
   bool isValidBase64(String base64String) {
     final sanitized = sanitizeBase64(base64String);
-    final base64Pattern = r'^[A-Za-z0-9+/]*={0,2}$';
+    const base64Pattern = r'^[A-Za-z0-9+/]*={0,2}$';
     return RegExp(base64Pattern).hasMatch(sanitized);
   }
+  Future<List<String>> listArchiveBoards() async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/kanban_boards/archives';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> files = json.decode(response.body);
+      return files.map((file) => file["name"] as String).toList();
+    } else {
+      throw Exception("Failed to list Kanban boards");
+    }
+  }
+
 
   String sanitizeBase64(String base64String) {
     return base64String.replaceAll('\n', '').replaceAll('\r', '').trim();

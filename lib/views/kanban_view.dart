@@ -1,16 +1,3 @@
-//  void initState() {
-//
-//     super.initState();
-//     final kanbanData = LocalStorageHelper.getValue('kanban_board');
-//
-//     if (kanbanData != null) {
-//       kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData));
-//     } else {
-//       final kanbanBoardJson = getKanbanBoardJson();
-//       kanbanBoard = KanbanBoard.fromJson(kanbanBoardJson['kanban_board']);
-//     }
-//   }
-
 import 'dart:convert';
 import 'package:cm_2_git/views/show_kanban_name_dialog.dart';
 import 'package:cm_2_git/views/timeline_data.dart';
@@ -31,12 +18,27 @@ import '../services/mili.dart';
 import '../services/singleton_data.dart';
 import 'column_management_dialog.dart';
 import 'delete_dialog.dart';
-import 'git_command_dialog.dart';
 import 'git_log.dart';
 import 'git_workflow_screen.dart';
 import 'github_stats_dialog.dart';
 import 'kanban_card_dialog.dart';
 import 'kanban_column_dialog.dart';
+
+
+class GridViewScreen extends StatelessWidget {
+  const GridViewScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        "Grid View Coming Soon!",
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+    );
+  }
+}
+
 
 class KanbanBoardScreen extends StatefulWidget {
   const KanbanBoardScreen({
@@ -50,7 +52,7 @@ class KanbanBoardScreen extends StatefulWidget {
 class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   late KanbanBoard kanbanBoard;
   final ScrollController _scrollController = ScrollController();
-  bool move = false;
+
   bool _isSaving = false; // Add this to your class as a state variable
   @override
   void dispose() {
@@ -61,7 +63,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
   @override
   void initState() {
-    super.initState();
     print('init');
     final kanbanData = LocalStorageHelper.getValue('kanban_board');
 
@@ -81,6 +82,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
     SingletonData().gitHubService = GitHubService(retrieveString(kanbanBoard.gitString),
         kanbanBoard.gitUser, kanbanBoard.gitRepo, kanbanBoard.gitUrl);
 
+    super.initState();
   }
 
   // Handle file open request from JavaScript
@@ -326,19 +328,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             }
           }
         }
-        /*
-        for (var column in kanbanBoard.columns) {
-          for (var card in column.cards) {
-            card.files = [];
-            for (var branch in branches) {
-              if (branch.commit.commit.message.contains('${card.id}')) {
-                card.files.add(branch.commit);
-                card.sha = branch.commit.commit.sha;
-              }
-            }
-          }
-        }
-*/
         SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
           const SnackBar(content: Text('Refreshed')),
         );
@@ -354,7 +343,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   Widget build(BuildContext context) {
     print('-----------------------build-------------------------');
     kanbanBoard = SingletonData().kanbanBoard;
-    int i = 0;
 
     return Stack(children: [
       Scaffold(
@@ -475,12 +463,12 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             SizedBox(
               width: 40,
               child: Tooltip(
-                message: move ? 'Turn Drag/Drop off' : 'Turn Drag/Drop on',
+                message: SingletonData().move ? 'Turn Drag/Drop off' : 'Turn Drag/Drop on',
                 child: Checkbox(
-                    value: move,
+                    value: SingletonData().move,
                     onChanged: (b) {
                       setState(() {
-                        move = b!;
+                        SingletonData().move = b!;
                       });
                     }),
               ),
@@ -490,119 +478,29 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             ),
           ],
         ),
-        body: Scrollbar(
-          thickness: 12,
-          controller: _scrollController,
-          thumbVisibility: true,
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: kanbanBoard.columns.map((column) {
-                i++;
-                return Container(
-                  decoration: newBoxDec(),
-                  width: 300,
-                  margin: const EdgeInsets.all(8),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () => _editColumn(column),
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Text(
-                                column.name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          i == 1
-                              ? IconButton(
-                                  tooltip: 'Add a Card',
-                                  icon: const Icon(Icons.add),
-                                  onPressed: () {
-                                    if (column.maxCards == 0 ||
-                                        column.maxCards > column.cards.length) {
-                                      _addCard(column.name);
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                            content: Text(
-                                                "You can't add more cards to this column")),
-                                      );
-                                    }
-                                  },
-                                )
-                              : IconButton(
-                                  tooltip:
-                                      'You can only add cards to the first column',
-                                  icon: const Icon(
-                                      color: Colors.black45,
-                                      Icons.check_box_outline_blank),
-                                  onPressed: () => setState(() {}),
-                                ),
-                          Text(
-                            '${column.cards.length}/${column.maxCards}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      Expanded(
-                        child: DragTarget<KanbanCard>(
-                          onWillAccept: (card) => true,
-                          onAccept: (card) {
-                            _onCardDropped(card, column);
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            return ListView(
-                              children: column.cards.map((card) {
-                                if (move) {
-                                  return Draggable<KanbanCard>(
-                                    data: card,
-                                    feedback: Material(
-                                      child: KanbanCardWidget(
-                                        card: card,
-                                        onEdit: () {},
-                                      ),
-                                    ),
-                                    childWhenDragging: Container(),
-                                    child: KanbanCardWidget(
-                                      card: card,
-                                      onEdit: () {
-                                        _editCard(card);
-                                      },
-                                    ),
-                                  );
-                                } else {
-                                  return KanbanCardWidget(
-                                    card: card,
-                                    onEdit: () {
-                                      _editCard(card);
-                                    },
-                                  );
-                                }
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+        body: DefaultTabController(
+          length: 2, // Two tabs: Kanban and Grid View
+          child: Column(
+            children: [
+              // Tabs at the top
+              const TabBar(
+                tabs: [
+                  Tab(text: "Kanban View"),
+                  Tab(text: "Grid View"),
+                ],
+              ),
+              // Content of the tabs
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    kanbanView(), // Replace with your actual Kanban implementation
+                    GridViewScreen(), // Replace with your actual GridView implementation
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
+        )
       ),
       if (_isSaving)
         Container(
@@ -707,7 +605,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         reader.readAsText(file);
 
         reader.onLoadEnd.listen(
-            // After file finish reading and loading, it will be uploaded to firebase storage
+            // After file finish reading and loading, it will be uploaded to local storage
             (loadEndEvent) async {
           var json = reader.result;
           kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
@@ -719,6 +617,124 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         });
       },
     );
+  }
+
+  Widget kanbanView() {
+    int i = 0;
+    return
+        Scrollbar(
+          thickness: 12,
+          controller: _scrollController,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: kanbanBoard.columns.map((column) {
+                i++;
+                return Container(
+                  decoration: newBoxDec(),
+                  width: 300,
+                  margin: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => _editColumn(column),
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Text(
+                                column.name,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          i == 1
+                              ? IconButton(
+                                  tooltip: 'Add a Card',
+                                  icon: const Icon(Icons.add),
+                                  onPressed: () {
+                                    if (column.maxCards == 0 ||
+                                        column.maxCards > column.cards.length) {
+                                      _addCard(column.name);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                "You can't add more cards to this column")),
+                                      );
+                                    }
+                                  },
+                                )
+                              : IconButton(
+                                  tooltip:
+                                      'You can only add cards to the first column',
+                                  icon: const Icon(
+                                      color: Colors.black45,
+                                      Icons.check_box_outline_blank),
+                                  onPressed: () => setState(() {}),
+                                ),
+                          Text(
+                            '${column.cards.length}/${column.maxCards}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      Expanded(
+                        child: DragTarget<KanbanCard>(
+                          onWillAccept: (card) => true,
+                          onAccept: (card) {
+                            _onCardDropped(card, column);
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            return ListView(
+                              children: column.cards.map((card) {
+                                if (SingletonData().move) {
+                                  return Draggable<KanbanCard>(
+                                    data: card,
+                                    feedback: Material(
+                                      child: KanbanCardWidget(
+                                        card: card,
+                                        onEdit: () {},
+                                      ),
+                                    ),
+                                    childWhenDragging: Container(),
+                                    child: KanbanCardWidget(
+                                      card: card,
+                                      onEdit: () {
+                                        _editCard(card);
+                                      },
+                                    ),
+                                  );
+                                } else {
+                                  return KanbanCardWidget(
+                                    card: card,
+                                    onEdit: () {
+                                      _editCard(card);
+                                    },
+                                  );
+                                }
+                              }).toList(),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
   }
 }
 
@@ -834,72 +850,105 @@ class KanbanColumnWidget extends StatelessWidget {
     );
   }
 }
-
-class KanbanCardWidget extends StatelessWidget {
+class KanbanCardWidget extends StatefulWidget {
   final KanbanCard card;
   final VoidCallback onEdit;
 
-  KanbanCardWidget({required this.card, required this.onEdit});
 
-  void _copyToClipboard(BuildContext context) {
-    final text = 'Card ID: ${card.id}';
-    Clipboard.setData(ClipboardData(text: text));
-    SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(content: Text('Copied to clipboard: $text')),
-    );
-  }
+  KanbanCardWidget({
+    required this.card,
+    required this.onEdit,
+  });
+
+  @override
+  _KanbanCardWidgetState createState() => _KanbanCardWidgetState();
+}
+
+class _KanbanCardWidgetState extends State<KanbanCardWidget> {
+  bool _isHovered = false; // To track if the card is hovered (mouse down)
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: card.blocked ? Colors.redAccent : singletonData.kPrimaryColor,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return GestureDetector(
+      onTap: widget.onEdit,
+      onTapDown: (details) {
+        if (SingletonData().move) {
+          // Only allow hover effect when move is false
+          setState(() {
+            _isHovered = true;
+          });
+        }
+      },
+      onTapUp: (details) {
+        if (SingletonData().move) {
+          setState(() {
+            _isHovered = false;
+          });
+        }
+      },
+      onTapCancel: () {
+        if (SingletonData().move) {
+          setState(() {
+            _isHovered = false;
+          });
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        width: _isHovered ? MediaQuery.of(context).size.width * 0.9 : 300,
+        child: Card(
+          color: widget.card.blocked
+              ? Colors.redAccent
+              : singletonData.kPrimaryColor,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ID: ${card.id}'),
-                IconButton(
-                  icon: const Icon(Icons.copy),
-                  onPressed: () => _copyToClipboard(context),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('ID: ${widget.card.id}'),
+                    IconButton(
+                      icon: const Icon(Icons.copy),
+                      onPressed: () => _copyToClipboard(context),
+                    ),
+                  ],
                 ),
+                Text('Title: ${widget.card.title}'),
+                const Divider(),
+                Text('Description: ${widget.card.description}'),
+                const Divider(),
+                Text('Assignee: ${widget.card.assignee}'),
+                const Divider(),
+                Text('Status: ${widget.card.status}'),
+                const Divider(),
+                Text(
+                    'Create Date: ${convertMilliToDateTime(widget.card.id)}'),
+                const Divider(),
+                widget.card.needDate!.isBefore(DateTime.now())
+                    ? Text(
+                  'Need Date: ${DateFormat('yyyy-MM-dd').format(widget.card.needDate!)}',
+                  style: widget.card.blocked
+                      ? const TextStyle(color: Colors.black)
+                      : const TextStyle(color: Colors.red),
+                )
+                    : Text(
+                    'Need Date: ${DateFormat('yyyy-MM-dd').format(widget.card.needDate!)}'),
               ],
             ),
-            Text('Title: ${card.title}'),
-            const Divider(),
-            Text('Description: ${card.description}'),
-            const Divider(),
-            Text('Assignee: ${card.assignee}'),
-            const Divider(),
-            Text('Status: ${card.status}'),
-            const Divider(),
-            Text('Create Date: ${convertMilliToDateTime(card.id)}'),
-            const Divider(),
-            card.needDate!.isBefore(DateTime.now())
-                ? Text(
-                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}',
-                    style: card.blocked
-                        ? const TextStyle(color: Colors.black)
-                        : const TextStyle(color: Colors.red),
-                  )
-                : Text(
-                    'Need Date: ${DateFormat('yyyy-MM-dd').format(card.needDate!)}'),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: onEdit,
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _copyToClipboard(BuildContext context) {
+    final text = 'Card ID: ${widget.card.id}';
+    Clipboard.setData(ClipboardData(text: text));
+    SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(content: Text('Copied to clipboard: $text')),
     );
   }
 }

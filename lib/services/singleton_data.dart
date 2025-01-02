@@ -45,7 +45,7 @@ class SingletonData {
   VoidCallback? kanbanViewSetState;
 
   late GitHubService gitHubService;
-
+  bool move = false;
 
   /// Register a callback for setState
   void registerkanbanViewSetState(VoidCallback callback) {

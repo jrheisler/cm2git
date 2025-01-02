@@ -15,35 +15,95 @@ class GitHubStatsDialog extends StatefulWidget {
   @override
   _GitHubStatsDialogState createState() => _GitHubStatsDialogState();
 }
-
-class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
+class _GitHubStatsDialogState extends State<GitHubStatsDialog>
+    with SingleTickerProviderStateMixin {
   bool isLoading = true;
   Map<String, dynamic> stats = {};
+  Map<String, bool> isTabLoaded = {
+    'contributors': false,
+    'commit_activity': false,
+    'code_frequency': false,
+    'participation': false,
+  };
+
 
   @override
   void initState() {
     super.initState();
-    fetchStats();
+    //fetchStats();
+    fetchTabData('contributors'); // Preload the first tab's data
+  }
+  Future<void> fetchTabData(String tab) async {
+    if (isTabLoaded[tab] == true) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      dynamic data;
+      switch (tab) {
+        case 'contributors':
+          data = await fetchGitHubData('/stats/contributors');
+          break;
+        case 'commit_activity':
+          data = await fetchGitHubData('/stats/commit_activity');
+          break;
+        case 'code_frequency':
+          data = await fetchGitHubData('/stats/code_frequency');
+          break;
+        case 'participation':
+          data = await fetchGitHubData('/stats/participation');
+          break;
+      // Add more cases as needed
+      }
+
+      setState(() {
+        stats[tab] = data;
+        isTabLoaded[tab] = true;
+      });
+    } catch (error) {
+      print('Error fetching $tab data: $error');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> fetchStats() async {
-    try {
-      final responses = await Future.wait([
-        fetchGitHubData('/stats/contributors'),
-        fetchGitHubData('/stats/commit_activity'),
-        fetchGitHubData('/stats/code_frequency'),
-        fetchGitHubData('/stats/participation'),
-        //fetchGitHubData('/stats/punch_card'),
-      ]);
+    setState(() {
+      isLoading = true;
+    });
 
+    try {
+      // Initialize an empty stats map
+      final tempStats = <String, dynamic>{};
+
+      // Fetch each stat individually and update state progressively
+      final contributors = await fetchGitHubData('/stats/contributors');
       setState(() {
-        stats = {
-          'contributors': responses[0],
-          'commit_activity': responses[1],
-          'code_frequency': responses[2],
-          'participation': responses[3],
-          //'punch_card': responses[4],
-        };
+        tempStats['contributors'] = contributors;
+      });
+
+      final commitActivity = await fetchGitHubData('/stats/commit_activity');
+      setState(() {
+        tempStats['commit_activity'] = commitActivity;
+      });
+
+      final codeFrequency = await fetchGitHubData('/stats/code_frequency');
+      setState(() {
+        tempStats['code_frequency'] = codeFrequency;
+      });
+
+      final participation = await fetchGitHubData('/stats/participation');
+      setState(() {
+        tempStats['participation'] = participation;
+      });
+
+      // Once all requests are done, update the main stats
+      setState(() {
+        stats = tempStats;
         isLoading = false;
       });
     } catch (error) {
@@ -75,9 +135,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('Git Statistics for ${widget.repo}'),
-      content: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : DefaultTabController(
+      content: DefaultTabController(
         length: 4,
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
@@ -85,23 +143,48 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const TabBar(
-                tabs: [
+              TabBar(
+                onTap: (index) {
+                  // Lazy-load data for the selected tab
+                  switch (index) {
+                    case 0:
+                      fetchTabData('contributors');
+                      break;
+                    case 1:
+                      fetchTabData('commit_activity');
+                      break;
+                    case 2:
+                      fetchTabData('code_frequency');
+                      break;
+                    case 3:
+                      fetchTabData('participation');
+                      break;
+                  }
+                },
+                tabs: const [
                   Tab(text: 'Contributors'),
                   Tab(text: 'Commit Activity'),
                   Tab(text: 'Code Frequency'),
                   Tab(text: 'Participation'),
-                  //Tab(text: 'Punch Card'),
+                  // Add more tabs as needed
                 ],
               ),
               Expanded(
                 child: TabBarView(
                   children: [
-                    ContributorsTab(data: stats['contributors'] ?? []),
-                    CommitActivityTab(data: stats['commit_activity'] ?? []),
-                    CodeFrequencyTab(data: stats['code_frequency'] ?? []),
-                    ParticipationTab(data: stats['participation'] ?? {}),
-                    //PunchCardTab(data: stats['punch_card'] ?? []),
+                    isTabLoaded['contributors'] == true
+                        ? ContributorsTab(data: stats['contributors'] ?? [])
+                        : const Center(child: CircularProgressIndicator()),
+                    isTabLoaded['commit_activity'] == true
+                        ? CommitActivityTab(data: stats['commit_activity'] ?? [])
+                        : const Center(child: CircularProgressIndicator()),
+                    isTabLoaded['code_frequency'] == true
+                        ? CodeFrequencyTab(data: stats['code_frequency'] ?? [])
+                        : const Center(child: CircularProgressIndicator()),
+                    isTabLoaded['participation'] == true
+                        ? ParticipationTab(data: stats['participation'] ?? {})
+                        : const Center(child: CircularProgressIndicator()),
+                    // Add more tab views as needed
                   ],
                 ),
               ),

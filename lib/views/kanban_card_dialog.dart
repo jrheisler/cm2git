@@ -5,6 +5,7 @@ import '../main.dart';
 import '../models/kanban_card.dart';
 import '../services/email.dart';
 import '../services/git_hub_commit_details.dart';
+import '../services/helpers.dart';
 import '../services/mili.dart';
 import '../services/singleton_data.dart';
 import 'commit_details_dialog.dart';
@@ -527,9 +528,80 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
               );
             }
           },
-        )
+        ),
+        PopupMenuButton<String>(
+          onSelected: (value) async {
+            if (value == 'Move') {
+              // Open move dialog
+              await _showMoveCardDialog(context, widget.card!);
+            } else if (value == 'Archive') {
+              // Archive card
+              await _archiveCard(widget.card!);
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'Move', child: Text('Move to Board')),
+            const PopupMenuItem(value: 'Archive', child: Text('Archive')),
+          ],
+        ),
+
       ],
     );
+  }
+  Future<void> _archiveCard(KanbanCard card) async {
+    final archives = await SingletonData().gitHubService.listArchiveBoards(); // Fetch all archive boards
+    final selectedArchive = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: const Text('Archive Card'),
+          children: [
+            ...archives.map((archive) {
+              return SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, archive),
+                child: Text(archive),
+              );
+            }),
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text('Create New Archive Board'),
+            ),
+          ],
+        );
+      },
+    );
+
+    final archiveBoardName = selectedArchive ?? "Archive_${DateTime.now().millisecondsSinceEpoch}";
+    await archiveCard(card, SingletonData().kanbanBoard.name, archiveBoardName: archiveBoardName);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Card archived to $archiveBoardName')),
+    );
+  }
+
+  Future<void> _showMoveCardDialog(BuildContext context, KanbanCard card) async {
+    final boards = await SingletonData().gitHubService.listKanbanBoards(); // Fetch all active boards
+    final selectedBoard = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: const Text('Move Card to Board'),
+          children: boards.map((board) {
+            return SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, board),
+              child: Text(board),
+            );
+          }).toList(),
+        );
+      },
+    );
+
+    if (selectedBoard != null) {
+      await moveCardToBoard(card,selectedBoard);
+      SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(content: Text('Card moved to $selectedBoard')),
+      );
+    }
   }
 
   Widget _buildCommitDates() {

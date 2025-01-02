@@ -213,6 +213,9 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
                 print("No card IDs found in the board.");
               }
 
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(SingletonData().kanbanBoard.toJson()));
+
               // Trigger a refresh in the UI
               SingletonData().kanbanViewSetState?.call();
               print("Refreshed board and cards successfully.");
