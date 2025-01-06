@@ -50,6 +50,7 @@ class _ColumnManagementDialogState extends State<ColumnManagementDialog> {
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () {
+                      if (mounted)
                       setState(() {
                         widget.onDeleteColumn(column);
                       });

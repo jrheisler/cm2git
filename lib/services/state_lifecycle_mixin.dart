@@ -13,6 +13,7 @@ mixin StateManagerLifecycle<T extends StatefulWidget> on State<T> {
     _stateManager = createStateManager();
     _stateManagerName = createStateManagerName();
     _stateManager.onStateChanged = () {
+      if (mounted)
       setState(() {});
     };
     smReg.register(_stateManagerName, _stateManager);

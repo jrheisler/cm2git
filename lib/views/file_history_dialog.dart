@@ -48,6 +48,7 @@ class _FileHistoryDialogState extends State<FileHistoryDialog> {
     );
 
     if (response.statusCode == 200) {
+      if (mounted)
       setState(() {
         _commits = json.decode(response.body);
         _isLoading = false;
@@ -55,6 +56,7 @@ class _FileHistoryDialogState extends State<FileHistoryDialog> {
     } else {
       // Log errors or show an error message
       print('Failed to fetch commit history: ${response.statusCode}');
+      if (mounted)
       setState(() {
         _isLoading = false;
       });

@@ -44,11 +44,13 @@ class _GitLogDialogState extends State<GitLogDialog> {
     );
 
     if (response.statusCode == 200) {
+      if (mounted)
       setState(() {
         _commits = json.decode(response.body);
         _isLoading = false;
       });
     } else {
+      if (mounted)
       setState(() {
         _isLoading = false;  // handle error state appropriately
       });

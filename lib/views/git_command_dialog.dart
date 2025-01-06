@@ -49,6 +49,7 @@ class _GitCommandDialogState extends State<GitCommandDialog> {
             commandOutput = "Command completed successfully.";
           });
       } catch (e) {
+        if (mounted)
         setState(() {
           commandOutput = "Error: $e";
         });

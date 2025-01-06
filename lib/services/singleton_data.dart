@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../models/kanban_board.dart';
+import '../models/kanban_card.dart';
 import 'git_services.dart';
 
 class SingletonData {
@@ -28,11 +29,14 @@ class SingletonData {
   Color kShadowColor = Colors.white54;
   Color kPrimaryColor = Colors.deepPurple;
   bool kDebugMode = false;
-  late KanbanBoard kanbanBoard;
+  KanbanBoard kanbanBoard = KanbanBoard(columns: [], name: '', gitUrl: '', gitUser: '', gitRepo: '', gitString: '');
   // Holds the current local all-in-one JSON structure
   Map<String, dynamic> allInOneJson = {};
 
   // --- Methods for Task 1 ---
+
+  DateTime dueDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+
 
   // Callback for setState
   VoidCallback? kanbanCardDialogSetState;
@@ -41,15 +45,38 @@ class SingletonData {
   void registerSetStateCallback(VoidCallback callback) {
     kanbanCardDialogSetState = callback;
   }
-// Callback for setState
+
+  VoidCallback? appFrameSetState;
+  void registerAppFrameSetStateCallback(VoidCallback callback) {
+    appFrameSetState = callback;
+  }
+
+  // Callback for setState
   VoidCallback? kanbanViewSetState;
-
-  late GitHubService gitHubService;
-  bool move = false;
-
   /// Register a callback for setState
   void registerkanbanViewSetState(VoidCallback callback) {
     kanbanViewSetState = callback;
+  }
+
+
+  List<KanbanCard> getAllCards() {
+    return SingletonData()
+        .kanbanBoard
+        .columns
+        .expand((column) => column.cards)
+        .toList();
+  }
+
+  late GitHubService gitHubService;
+  bool move = false;
+  VoidCallback? _calendarUpdateCallback;
+
+  void registerCalendarUpdateCallback(VoidCallback callback) {
+    _calendarUpdateCallback = callback;
+  }
+
+  void triggerCalendarUpdate() {
+    _calendarUpdateCallback?.call();
   }
 
   // Save indicator
@@ -58,13 +85,28 @@ class SingletonData {
   // Methods to manage save state
   void markSaveNeeded() {
     isSaveNeeded = true;
-    kanbanCardDialogSetState?.call(); // Trigger setState in KanbanCardDialog
+    kanbanViewSetState?.call(); // Trigger setState in KanbanCardDialog
+    appFrameSetState?.call();
+    triggerCalendarUpdate();
   }
 
   void clearSaveNeeded() {
+    SingletonData().gitHubService = GitHubService(
+        retrieveString(kanbanBoard.gitString),
+        kanbanBoard.gitUser,
+        kanbanBoard.gitRepo,
+        kanbanBoard.gitUrl);
     isSaveNeeded = false;
-    kanbanCardDialogSetState?.call(); // Trigger setState in KanbanCardDialog
+    kanbanViewSetState?.call();
+    appFrameSetState?.call();
+    triggerCalendarUpdate();// Trigger setState in KanbanCardDialog
   }
+
+  void triggerKanbanViewRefresh() {
+    kanbanViewSetState?.call();
+  }
+
+
 
   /// Splits all-in-one JSON into modular files
   Map<String, String> splitAllInOneJson() {

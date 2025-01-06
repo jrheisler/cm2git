@@ -215,7 +215,7 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
 
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(SingletonData().kanbanBoard.toJson()));
-
+              SingletonData().clearSaveNeeded();
               // Trigger a refresh in the UI
               SingletonData().kanbanViewSetState?.call();
               print("Refreshed board and cards successfully.");
@@ -234,6 +234,7 @@ class _GitWorkflowScreenState extends State<GitWorkflowScreen> {
 
     // Determine the largest button width
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted)
       setState(() {
         buttonWidth = commands
             .map((cmd) => _calculateButtonWidth(cmd["title"]))

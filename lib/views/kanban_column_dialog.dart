@@ -58,12 +58,15 @@ class _KanbanColumnDialogState extends State<KanbanColumnDialog> {
         ),
         TextButton(
           onPressed: () {
+            if (_maxCards.text.isEmpty) {
+              _maxCards.text = '0';
+            }
             final title = _titleController.text;
             if (title.isNotEmpty) {
               final column = KanbanColumn(
                 id: widget.column?.id ?? DateTime.now().millisecondsSinceEpoch.toInt(),
                 name: title,
-                cards: widget.column?.cards ?? [],
+                cards: [],
                 maxCards: int.parse(_maxCards.text),
               );
               widget.onSave(column);

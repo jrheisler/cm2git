@@ -35,7 +35,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog>
   }
   Future<void> fetchTabData(String tab) async {
     if (isTabLoaded[tab] == true) return;
-
+    if (mounted)
     setState(() {
       isLoading = true;
     });
@@ -57,7 +57,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog>
           break;
       // Add more cases as needed
       }
-
+      if (mounted)
       setState(() {
         stats[tab] = data;
         isTabLoaded[tab] = true;
@@ -65,6 +65,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog>
     } catch (error) {
       print('Error fetching $tab data: $error');
     } finally {
+      if (mounted)
       setState(() {
         isLoading = false;
       });
@@ -72,6 +73,7 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog>
   }
 
   Future<void> fetchStats() async {
+    if (mounted)
     setState(() {
       isLoading = true;
     });
@@ -82,32 +84,38 @@ class _GitHubStatsDialogState extends State<GitHubStatsDialog>
 
       // Fetch each stat individually and update state progressively
       final contributors = await fetchGitHubData('/stats/contributors');
+      if (mounted)
       setState(() {
         tempStats['contributors'] = contributors;
       });
 
       final commitActivity = await fetchGitHubData('/stats/commit_activity');
+      if (mounted)
       setState(() {
         tempStats['commit_activity'] = commitActivity;
       });
 
       final codeFrequency = await fetchGitHubData('/stats/code_frequency');
+      if (mounted)
       setState(() {
         tempStats['code_frequency'] = codeFrequency;
       });
 
       final participation = await fetchGitHubData('/stats/participation');
+      if (mounted)
       setState(() {
         tempStats['participation'] = participation;
       });
 
       // Once all requests are done, update the main stats
+      if (mounted)
       setState(() {
         stats = tempStats;
         isLoading = false;
       });
     } catch (error) {
       print('Error fetching stats: $error');
+      if (mounted)
       setState(() {
         isLoading = false;
       });

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cm_2_git/views/reports.dart';
 import 'package:cm_2_git/views/show_kanban_name_dialog.dart';
 import 'package:cm_2_git/views/timeline_data.dart';
 import 'package:cm_2_git/views/tree_view.dart';
@@ -13,6 +14,7 @@ import '../models/kanban_card.dart';
 import '../models/kanban_column.dart';
 import '../services/download_file.dart';
 import '../services/git_services.dart';
+import '../services/helpers.dart';
 import '../services/local_storage_helper.dart';
 import '../services/mili.dart';
 import '../services/singleton_data.dart';
@@ -33,43 +35,34 @@ class KanbanBoardScreen extends StatefulWidget {
   _KanbanBoardScreenState createState() => _KanbanBoardScreenState();
 }
 
-class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
+class _KanbanBoardScreenState extends State<KanbanBoardScreen>
+    with SingleTickerProviderStateMixin {
   late KanbanBoard kanbanBoard;
   final ScrollController _scrollController = ScrollController();
+  late TabController _tabController;
 
   bool _isSaving = false; // Add this to your class as a state variable
   @override
   void dispose() {
     _scrollController.dispose();
+    _tabController.dispose();
     print('dispose');
     super.dispose();
   }
 
   @override
   void initState() {
-    print('init');
-    final kanbanData = LocalStorageHelper.getValue('kanban_board');
-
-    try {
-      kanbanBoard = KanbanBoard.fromJson(jsonDecode(kanbanData!));
-    } catch (e) {
-      kanbanBoard = KanbanBoard.fromData();
-    }
-
-    SingletonData().kanbanBoard = kanbanBoard;
+    kanbanBoard = SingletonData().kanbanBoard;
     SingletonData().registerkanbanViewSetState(() {
+      if (mounted)
       setState(() {
         print('set state kanban view');
       }); // Trigger a rebuild when the callback is invoked
     });
     _refreshFiles();
-    SingletonData().gitHubService = GitHubService(
-        retrieveString(kanbanBoard.gitString),
-        kanbanBoard.gitUser,
-        kanbanBoard.gitRepo,
-        kanbanBoard.gitUrl);
 
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   // Handle file open request from JavaScript
@@ -81,6 +74,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       } catch (e) {
         kanbanBoard = KanbanBoard.fromData();
       }
+      if (mounted)
       setState(() {});
     } catch (e) {
       print('Error parsing JSON: $e');
@@ -98,18 +92,18 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             Navigator.of(context).pop();
           },
           onSave: (card) {
+            if (mounted)
             setState(() {
               kanbanBoard.columns
                   .firstWhere((column) => column.name == columnName)
                   .cards
                   .add(card);
-
               card.dates
                   .add(KanbanDates(date: DateTime.now(), status: card.status));
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
               card.isModified = true;
-              SingletonData().isSaveNeeded = true;
+              SingletonData().markSaveNeeded();
             });
           },
         );
@@ -135,12 +129,15 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 jsonEncode(kanbanBoard.toJson()),
               );
               card.isModified = true;
-              SingletonData().isSaveNeeded = true;
+
+              SingletonData().markSaveNeeded();
               Navigator.of(context).pop();
             });
+            if (mounted)
             setState(() {});
           },
           onSave: (updatedCard) {
+            if (mounted)
             setState(() {
               var column = kanbanBoard.columns
                   .firstWhere((column) => column.name == updatedCard.status);
@@ -161,7 +158,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                 jsonEncode(kanbanBoard.toJson()),
               );
               updatedCard.isModified = true;
-              SingletonData().isSaveNeeded = true;
+              SingletonData().markSaveNeeded();
             });
           },
         );
@@ -175,19 +172,25 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       builder: (context) {
         return KanbanColumnDialog(
           onSave: (column) {
+            if (mounted)
             setState(() {
+              print(179);
               kanbanBoard.columns.add(column);
+              print(181);
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              SingletonData().isSaveNeeded = true;
+              print(184);
+              SingletonData().markSaveNeeded();
+              print(186);
             });
           },
           onDelete: (deletedColumn) {
+            if (mounted)
             setState(() {
               kanbanBoard.columns.remove(deletedColumn);
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              SingletonData().isSaveNeeded = true;
+              SingletonData().markSaveNeeded();
             });
           },
         );
@@ -202,20 +205,22 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         return KanbanColumnDialog(
           column: column,
           onSave: (updatedColumn) {
+            if (mounted)
             setState(() {
               int index = kanbanBoard.columns.indexOf(column);
               kanbanBoard.columns[index] = updatedColumn;
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              SingletonData().isSaveNeeded = true;
+              SingletonData().markSaveNeeded();
             });
           },
           onDelete: (deletedColumn) {
+            if (mounted)
             setState(() {
               kanbanBoard.columns.remove(deletedColumn);
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              SingletonData().isSaveNeeded = true;
+              SingletonData().markSaveNeeded();
             });
           },
         );
@@ -225,6 +230,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
   void _onCardDropped(KanbanCard card, KanbanColumn targetColumn) {
     if (targetColumn.cards.length < targetColumn.maxCards) {
+      if (mounted)
       setState(() {
         // Remove the card from its original column
         for (var column in kanbanBoard.columns) {
@@ -253,7 +259,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
         targetColumn.cards.add(newCard);
         LocalStorageHelper.saveValue(
             'kanban_board', jsonEncode(kanbanBoard.toJson()));
-        SingletonData().isSaveNeeded = true;
+        SingletonData().markSaveNeeded();
       });
     } else {
       SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
@@ -264,11 +270,12 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   }
 
   void _deleteColumn(KanbanColumn column) {
+    if (mounted)
     setState(() {
       kanbanBoard.columns.removeWhere((col) => col.id == column.id);
       LocalStorageHelper.saveValue(
           'kanban_board', jsonEncode(kanbanBoard.toJson()));
-      SingletonData().isSaveNeeded = true;
+      SingletonData().markSaveNeeded();
     });
   }
 
@@ -293,6 +300,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       final List<GitPullRequest> pulls =
           await SingletonData().gitHubService.getPullRequests();
       //final List<GitBranch> branches = await _gitHubService.getBranches();
+      if (mounted)
       setState(() {
         for (var column in kanbanBoard.columns) {
           for (var card in column.cards) {
@@ -317,6 +325,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             }
           }
         }
+        SingletonData().clearSaveNeeded();
         SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
               const SnackBar(content: Text('Refreshed')),
             );
@@ -335,166 +344,31 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
 
     return Stack(children: [
       Scaffold(
-          appBar: AppBar(
-            title: ElevatedButton(
-              onPressed: () async {
-                KanbanBoard _kanbanBoard =
-                    (await showNameDialog(context, kanbanBoard))!;
-                if (_kanbanBoard != null) {
-                  setState(() {
-                    kanbanBoard = _kanbanBoard;
-                    LocalStorageHelper.saveValue(
-                        'kanban_board', jsonEncode(kanbanBoard.toJson()));
-                    SingletonData().isSaveNeeded = true;
-                  });
-                } else {
-                  print("Dialog was canceled.");
-                }
-              },
-              child: Text(
-                '${kanbanBoard.name} - ${kanbanBoard.gitRepo}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            actions: [
-              // Save to Git Icon
-              if (SingletonData().isSaveNeeded)
-                IconButton(
-                  icon: const Icon(Icons.save, color: Colors.red),
-                  onPressed: _saveToGit,
-                  tooltip: 'Save to Git',
-                ),
-              IconButton(
-                icon: const Icon(
-                  Icons.integration_instructions_sharp,
-                ),
-                onPressed: () => showGitWorkflowDialog(
-                    context, SingletonData().gitHubService),
-                tooltip: 'Git Integration',
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _refreshFiles,
-                tooltip: 'Refresh Files',
-              ),
-              IconButton(
-                icon: const Icon(Icons.list_alt_outlined),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => GitLogDialog(
-                      githubUser: kanbanBoard.gitUser,
-                      githubToken: retrieveString(kanbanBoard.gitString),
-                      githubRepo: kanbanBoard.gitRepo,
-                      githubUrl: kanbanBoard.gitUrl,
-                    ),
-                  );
-                },
-                tooltip: 'Show Git Log',
-              ),
-              IconButton(
-                icon: const Icon(Icons.streetview_sharp),
-                onPressed: () {
-                  showDialog(
-                      context: context,
-                      builder: (context) {
-                        return GitHubFileTree(
-                          githubUser: kanbanBoard.gitUser,
-                          githubToken: retrieveString(kanbanBoard.gitString),
-                          githubRepo: kanbanBoard.gitRepo,
-                          githubUrl: kanbanBoard.gitUrl,
-                        );
-                      });
-                },
-                tooltip: 'Tree View',
-              ),
-              IconButton(
-                icon: const Icon(Icons.graphic_eq_sharp),
-                onPressed: () {
-                  showDialog(
-                      context: context,
-                      builder: (context) {
-                        return TimelineChart(kanban: kanbanBoard);
-                      });
-                },
-                tooltip: 'Timeline Chart',
-              ),
-              IconButton(
-                  tooltip: 'Git Status',
-                  icon: const Icon(Icons.auto_graph),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => GitHubStatsDialog(
-                          owner: kanbanBoard.gitUser,
-                          repo: kanbanBoard.gitRepo,
-                          gitUrl: kanbanBoard.gitUrl,
-                          gitString: kanbanBoard.gitString),
-                    );
-                  }),
-              IconButton(
-                icon: const Icon(Icons.download),
-                onPressed: _downloadKanban,
-                tooltip: 'Download Kanban',
-              ),
-              IconButton(
-                icon: const Icon(Icons.import_export_sharp),
-                onPressed: _importKanban,
-                tooltip: 'Import a Kanban From File',
-              ),
-              IconButton(
-                icon: const Icon(Icons.view_column),
-                onPressed: _manageColumns,
-                tooltip: 'Manage Columns',
-              ),
-              SizedBox(
-                width: 40,
-                child: Tooltip(
-                  message: SingletonData().move
-                      ? 'Turn Drag/Drop off'
-                      : 'Turn Drag/Drop on',
-                  child: Checkbox(
-                      value: SingletonData().move,
-                      onChanged: (b) {
-                        setState(() {
-                          SingletonData().move = b!;
-                        });
-                      }),
-                ),
-              ),
-              const SizedBox(
-                width: 20,
-              ),
+        appBar: appBar(),
+        body: DefaultTabController(
+          length: 2, // Two tabs: Kanban and Grid View
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              kanbanView(),
+              // Replace with your actual Kanban implementation
+              gridViewScreen(),
+              // Replace with your actual GridView implementation
             ],
           ),
-          body: DefaultTabController(
-            length: 2, // Two tabs: Kanban and Grid View
-            child: Column(
-              children: [
-                // Tabs at the top
-                const TabBar(
-                  tabs: [
-                    Tab(text: "Kanban View"),
-                    Tab(text: "Grid View"),
-                  ],
-                ),
-                // Content of the tabs
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      kanbanView(),
-                      // Replace with your actual Kanban implementation
-                      gridViewScreen(),
-                      // Replace with your actual GridView implementation
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          )),
+        ),
+        bottomNavigationBar: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: "Kanban View"),
+            Tab(text: "Grid View"),
+          ],
+          labelColor: Colors.blue,
+          // Customize as needed
+          unselectedLabelColor: Colors.grey,
+          indicatorSize: TabBarIndicatorSize.label,
+        ),
+      ),
       if (_isSaving)
         Container(
           color: Colors.black54, // Semi-transparent background
@@ -506,6 +380,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
   }
 
   void _saveToGit() async {
+    if (mounted)
     setState(() {
       _isSaving = true; // Show the progress indicator
     });
@@ -560,7 +435,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
                     Text("Committed board and modified cards successfully."),
               ),
             );
-
+        if (mounted)
         setState(() {
           resetCardsNotModified(currentBoard);
         });
@@ -577,6 +452,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             ),
           );
     } finally {
+      if (mounted)
       setState(() {
         _isSaving = false; // Hide the progress indicator
       });
@@ -609,10 +485,12 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
           var json = reader.result;
           kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
           SingletonData().kanbanBoard = kanbanBoard;
+          if (mounted)
           setState(() {
             LocalStorageHelper.saveValue(
                 'kanban_board', jsonEncode(kanbanBoard.toJson()));
           });
+          SingletonData().clearSaveNeeded();
         });
       },
     );
@@ -632,7 +510,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
             i++;
             return Container(
               decoration: newBoxDec(),
-              width: 300,
+              width: SingletonData().kanbanBoard.columns.length > 1 ? 300: MediaQuery.of(context).size.width - 310,
               margin: const EdgeInsets.all(8),
               child: Column(
                 children: [
@@ -742,6 +620,270 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen> {
       ),
     );
   }
+
+
+/*
+showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Git Workflow',
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Center(
+        child: Container(
+          constraints: const BoxConstraints(
+            minWidth: 600, // Minimum width for the dialog
+            maxWidth: 800, // Maximum width (optional)
+          ),
+          margin: const EdgeInsets.all(20), // 20-pixel border
+          padding: const EdgeInsets.all(16), // Inner padding for content
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 20,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: GitWorkflowScreen(githubService: gitHubService),
+        ),
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 500),
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curvedAnimation = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeInOut,
+      );
+      return FadeTransition(
+        opacity: curvedAnimation,
+        child: ScaleTransition(
+          scale: curvedAnimation,
+          child: child,
+        ),
+      );
+    },
+  );
+ */
+
+
+  void showStyledCIReportsDialog(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Git Workflow',
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(
+              minWidth: 600, // Minimum width for the dialog
+              maxWidth: 800, // Maximum width (optional)
+              maxHeight: 460, // Limit the height of the dialog
+            ),
+            margin: const EdgeInsets.all(4), // 20-pixel border
+            padding: const EdgeInsets.all(4), // Inner padding for content
+            child: CIReportsPage(),
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 500),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOut,
+        );
+        return FadeTransition(
+          opacity: curvedAnimation,
+          child: ScaleTransition(
+            scale: curvedAnimation,
+            child: child,
+          ),
+        );
+      },
+    );
+
+
+
+
+
+   /* showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            width: MediaQuery.of(context).size.width * 0.8, // Adjust width
+            height: 420, //MediaQuery.of(context).size.height * 0.6, // Adjust height
+            child: const CIReportsPage(),
+          ),
+        );
+      },
+    );*/
+  }
+
+
+
+  AppBar appBar() {
+    return AppBar(
+      title: ElevatedButton(
+        onPressed: () async {
+          KanbanBoard _kanbanBoard =
+              (await showNameDialog(context, kanbanBoard))!;
+          if (_kanbanBoard != null) {
+            if (mounted)
+            setState(() {
+              kanbanBoard = _kanbanBoard;
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
+              SingletonData().markSaveNeeded();
+            });
+          } else {
+            print("Dialog was canceled.");
+          }
+        },
+        child: Text(
+          '${kanbanBoard.name} - ${kanbanBoard.gitRepo}',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      actions: [
+        // Save to Git Icon
+        if (SingletonData().isSaveNeeded)
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.red),
+            onPressed: _saveToGit,
+            tooltip: 'Save to Git',
+          ),
+        IconButton(
+          icon: const Icon(
+            Icons.integration_instructions_sharp,
+          ),
+          onPressed: () =>
+              showGitWorkflowDialog(context, SingletonData().gitHubService),
+          tooltip: 'Git Integration',
+        ),
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: _refreshFiles,
+          tooltip: 'Refresh Files',
+        ),
+        IconButton(
+          icon: const Icon(Icons.list_alt_outlined),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => GitLogDialog(
+                githubUser: kanbanBoard.gitUser,
+                githubToken: retrieveString(kanbanBoard.gitString),
+                githubRepo: kanbanBoard.gitRepo,
+                githubUrl: kanbanBoard.gitUrl,
+              ),
+            );
+          },
+          tooltip: 'Show Git Log',
+        ),
+        IconButton(
+          icon: const Icon(Icons.streetview_sharp),
+          onPressed: () {
+            showDialog(
+                context: context,
+                builder: (context) {
+                  return GitHubFileTree(
+                    githubUser: kanbanBoard.gitUser,
+                    githubToken: retrieveString(kanbanBoard.gitString),
+                    githubRepo: kanbanBoard.gitRepo,
+                    githubUrl: kanbanBoard.gitUrl,
+                  );
+                });
+          },
+          tooltip: 'Tree View',
+        ),
+        IconButton(
+          icon: const Icon(Icons.graphic_eq_sharp),
+          onPressed: () {
+            showDialog(
+                context: context,
+                builder: (context) {
+                  return TimelineChart(kanban: kanbanBoard);
+                });
+          },
+          tooltip: 'Timeline Chart',
+        ),
+        IconButton(
+            tooltip: 'Git Status',
+            icon: const Icon(Icons.auto_graph),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => GitHubStatsDialog(
+                    owner: kanbanBoard.gitUser,
+                    repo: kanbanBoard.gitRepo,
+                    gitUrl: kanbanBoard.gitUrl,
+                    gitString: kanbanBoard.gitString),
+              );
+            }),
+        IconButton(
+          icon: const Icon(Icons.analytics),
+          tooltip: "View CI Reports",
+          onPressed: () {
+            showStyledCIReportsDialog(context);
+          },
+        ),
+
+        IconButton(
+          icon: const Icon(Icons.download),
+          onPressed: _downloadKanban,
+          tooltip: 'Download Kanban',
+        ),
+        IconButton(
+          icon: const Icon(Icons.import_export_sharp),
+          onPressed: _importKanban,
+          tooltip: 'Import a Kanban From File',
+        ),
+        IconButton(
+          icon: const Icon(Icons.view_column),
+          onPressed: _manageColumns,
+          tooltip: 'Manage Columns',
+        ),
+        SizedBox(
+          width: 40,
+          child: Tooltip(
+            message: SingletonData().move
+                ? 'Turn Drag/Drop off'
+                : 'Turn Drag/Drop on',
+            child: Checkbox(
+                value: SingletonData().move,
+                onChanged: (b) {
+                  if (mounted)
+                  setState(() {
+                    SingletonData().move = b!;
+                  });
+                }),
+          ),
+        ),
+        const SizedBox(
+          width: 20,
+        ),
+      ],
+    );
+  }
+
 }
 
 void resetCardsNotModified(KanbanBoard kanbanBoard) {
@@ -880,6 +1022,7 @@ class _KanbanCardWidgetState extends State<KanbanCardWidget> {
       onTapDown: (details) {
         if (SingletonData().move) {
           // Only allow hover effect when move is false
+          if (mounted)
           setState(() {
             _isHovered = true;
           });
@@ -887,6 +1030,7 @@ class _KanbanCardWidgetState extends State<KanbanCardWidget> {
       },
       onTapUp: (details) {
         if (SingletonData().move) {
+          if (mounted)
           setState(() {
             _isHovered = false;
           });
@@ -894,6 +1038,7 @@ class _KanbanCardWidgetState extends State<KanbanCardWidget> {
       },
       onTapCancel: () {
         if (SingletonData().move) {
+          if (mounted)
           setState(() {
             _isHovered = false;
           });
@@ -906,7 +1051,9 @@ class _KanbanCardWidgetState extends State<KanbanCardWidget> {
         child: Card(
           color: widget.card.blocked
               ? Colors.redAccent
-              : singletonData.kPrimaryColor,
+              : isSameDay(widget.card.needDate, SingletonData().dueDate)
+                  ? Colors.blueGrey
+                  : singletonData.kPrimaryColor,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
@@ -937,7 +1084,7 @@ class _KanbanCardWidgetState extends State<KanbanCardWidget> {
                         'Need Date: ${DateFormat('yyyy-MM-dd').format(widget.card.needDate!)}',
                         style: widget.card.blocked
                             ? const TextStyle(color: Colors.black)
-                            : const TextStyle(color: Colors.red),
+                            : const TextStyle(color: Colors.redAccent),
                       )
                     : Text(
                         'Need Date: ${DateFormat('yyyy-MM-dd').format(widget.card.needDate!)}'),
@@ -963,117 +1110,4 @@ class KanbanCardData {
   final KanbanColumn column;
 
   KanbanCardData({required this.card, required this.column});
-}
-
-Map<String, dynamic> getKanbanBoardJson() {
-  const kanbanBoardJson = '''
-  {
-    "kanban_board": {
-      "columns": [
-        {
-          "id": 1,
-          "name": "PRODUCT BACKLOG",
-          "cards": [
-            {
-              "id": 101,
-              "title": "Research API Integration",
-              "description": "Investigate the integration with external API services",
-              "assignee": "Alice",
-              "status": "PRODUCT BACKLOG",
-            },
-            {
-              "id": 102,
-              "title": "Design Database Schema",
-              "description": "Create initial database schema for the project",
-              "assignee": "Bob",
-              "status": "PRODUCT BACKLOG",              
-            }
-          ]
-        },
-        {
-          "id": 2,
-          "name": "SPRINT BACKLOG",
-          "cards": [
-            {
-              "id": 201,
-              "title": "Setup Development Environment",
-              "description": "Install and configure development tools and libraries",
-              "assignee": "Charlie",
-              "status": "SPRINT BACKLOG",              
-            },
-            {
-              "id": 202,
-              "title": "Create User Stories",
-              "description": "Write detailed user stories for the upcoming sprint",
-              "assignee": "Dave",
-              "status": "SPRINT BACKLOG",
-            }
-          ]
-        },
-        {
-          "id": 3,
-          "name": "WIP",
-          "cards": [
-            {
-              "id": 301,
-              "title": "Implement Login Feature",
-              "description": "Develop the login feature for the application",
-              "assignee": "Eve",
-              "status": "WIP",              
-            },
-            {
-              "id": 302,
-              "title": "Setup CI/CD Pipeline",
-              "description": "Configure continuous integration and deployment",
-              "assignee": "Frank",
-              "status": "WIP",              
-            }
-          ]
-        },
-        {
-          "id": 4,
-          "name": "TESTING",
-          "cards": [
-            {
-              "id": 401,
-              "title": "Write Unit Tests for Authentication",
-              "description": "Develop unit tests for the authentication module",
-              "assignee": "Grace",
-              "status": "TESTING",              
-            },
-            {
-              "id": 402,
-              "title": "Test Payment Gateway Integration",
-              "description": "Perform end-to-end testing for payment gateway",
-              "assignee": "Hank",
-              "status": "TESTING",              
-            }
-          ]
-        },
-        {
-          "id": 5,
-          "name": "DONE",
-          "cards": [
-            {
-              "id": 501,
-              "title": "Complete Project Setup",
-              "description": "Finish initial project setup and configuration",
-              "assignee": "Ivy",
-              "status": "DONE",              
-            },
-            {
-              "id": 502,
-              "title": "Deploy First Version",
-              "description": "Deploy the first version of the application to production",
-              "assignee": "Jack",
-              "status": "DONE",              
-            }
-          ]
-        }
-      ]
-    }
-  }
-  ''';
-
-  return jsonDecode(kanbanBoardJson);
 }

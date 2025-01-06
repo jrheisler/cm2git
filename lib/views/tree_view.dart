@@ -54,6 +54,7 @@ class _GitHubFileTreeState extends State<GitHubFileTree> {
                   title: Text(branches[index]),
                   onTap: () {
                     Navigator.of(context).pop();
+                    if (mounted)
                     setState(() {
                       _branchName = branches[index];
                       _fileSystemFuture = fetchFileSystem(branches[index]);

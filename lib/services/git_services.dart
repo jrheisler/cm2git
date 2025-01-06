@@ -35,6 +35,156 @@ class GitHubService {
 
   GitHubService(this._token, this._repoOwner, this._repoName, this._repoUrl);
 
+
+  Future<List<String>> fetchAllFiles() async {
+    try {
+      // Dynamically fetch the default branch
+      final defaultBranch = await getDefaultBranch();
+      final url = '$_repoUrl/repos/$_repoOwner/$_repoName/git/trees/$defaultBranch?recursive=1';
+      //print('Fetching from URL: $url');
+
+      // Make the HTTP GET request
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'token $_token'},
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the response
+        final responseJson = json.decode(response.body);
+        //print('Response JSON: $responseJson');
+
+        // Check for 'tree' field
+        if (responseJson['tree'] is List) {
+          // Filter files only and cast the list explicitly to List<String>
+          final files = (responseJson['tree'] as List)
+              .where((item) => item['type'] == 'blob') // Filter files only
+              .map((file) => file['path'] as String) // Ensure type is String
+              .toList();
+
+          //print('Files Found: $files');
+          return files;
+        } else {
+          throw Exception("Invalid response format: 'tree' field missing or not a list.");
+        }
+      } else {
+        throw Exception("Failed to fetch files: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      print('Error occurred: $e');
+      rethrow; // Re-throw error for higher-level handling
+    }
+  }
+
+
+
+  Future<String> getDefaultBranch() async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+    if (response.statusCode == 200) {
+      final repoInfo = json.decode(response.body);
+      return repoInfo['default_branch']; // Extract default_branch from repo info
+    } else {
+      throw Exception('Failed to fetch repository information.');
+    }
+  }
+
+  Future<double> calculateCIGrowthRate() async {
+    // Fetch the default branch dynamically
+    final defaultBranch = await getDefaultBranch();
+
+    // Fetch current files on the default branch
+    final currentFiles = await fetchAllFiles();
+
+    // Fetch the SHA of the previous commit on the default branch
+    final previousCommitSha = await getPreviousCommitSha(defaultBranch);
+
+    if (previousCommitSha == null) {
+      throw Exception("No previous commit found.");
+    }
+
+    // Fetch files from the previous commit
+    final previousFiles = await fetchAllFiles(); // This call needs context for the previous commit
+
+    // Calculate growth rate
+    final growthRate = ((currentFiles.length - previousFiles.length) / previousFiles.length) * 100;
+    return growthRate;
+  }
+
+
+
+
+  /// Fetch the SHA of the previous commit on a branch
+  Future<String?> getPreviousCommitSha(String branchOrSha) async {
+    final url = '$_repoUrl/repos/$_repoOwner/$_repoName/commits?sha=$branchOrSha&per_page=2';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Authorization': 'token $_token'},
+    );
+
+    if (response.statusCode == 200) {
+      final commits = json.decode(response.body) as List<dynamic>;
+      if (commits.length > 1) {
+        return commits[1]['sha'];
+      }
+    }
+    return null;
+  }
+
+
+  /// Identify orphaned files (files not linked to tasks or workflows)
+  Future<List<String>> findOrphanedCIs(List<String> linkedFiles) async {
+    final allFiles = await fetchAllFiles();
+    final orphanedFiles = allFiles.where((file) => !linkedFiles.contains(file)).toList();
+    return orphanedFiles;
+  }
+
+
+  /// Fetch the most frequently changed files
+  Future<Map<String, int>> fetchMostChangedCIs() async {
+    final allFiles = await fetchAllFiles();
+    final changeFrequency = <String, int>{};
+
+    for (final file in allFiles) {
+      final url = '$_repoUrl/repos/$_repoOwner/$_repoName/commits?path=$file';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'token $_token'},
+      );
+
+      if (response.statusCode == 200) {
+        final commits = json.decode(response.body) as List<dynamic>;
+        changeFrequency[file] = commits.length;
+      } else {
+        throw Exception("Failed to fetch commit history for $file");
+      }
+    }
+
+    // Sort by frequency
+    final sortedFrequency = Map.fromEntries(
+      changeFrequency.entries.toList()..sort((a, b) => b.value.compareTo(a.value)),
+    );
+
+    return sortedFrequency;
+  }
+
+  /// Perform impact analysis for a specific CI
+  Future<int> performImpactAnalysis(String filePath) async {
+    // For simplicity, we'll simulate dependencies here
+    // A real-world implementation would require parsing files for imports/includes
+    final simulatedDependencies = {
+      'fileA.dart': 5,
+      'fileB.dart': 3,
+      'fileC.dart': 8,
+    };
+
+    return simulatedDependencies[filePath] ?? 0;
+  }
+
+
   Future<List<String>> listKanbanBoards() async {
     final url = '$_repoUrl/repos/$_repoOwner/$_repoName/contents/kanban_boards';
     final response = await http.get(

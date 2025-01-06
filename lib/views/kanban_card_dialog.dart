@@ -40,6 +40,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   void initState() {
     super.initState();
     SingletonData().registerSetStateCallback(() {
+      if (mounted)
       setState(() {}); // Trigger a rebuild when the callback is invoked
     });
     _titleController = TextEditingController(text: widget.card?.title ?? '');
@@ -262,6 +263,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                   );
 
                   if (pickedDate != null) {
+                    if (mounted)
                     setState(() {
                       _needDateController.text =
                           DateFormat('yyyy-MM-dd').format(pickedDate);
@@ -275,6 +277,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                 title: const Text('Blocked'),
                 value: _blocked,
                 onChanged: (bool? value) {
+                  if (mounted)
                   setState(() {
                     _blocked = value ?? false;
                   });
@@ -436,11 +439,14 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
               if (selectedCommit != null) {
                 print("Fetching card version for commit: $selectedCommit");
 
-                final cardVersion = await SingletonData().gitHubService.fetchCardVersion(selectedCommit, cardId);
+                final cardVersion = await SingletonData()
+                    .gitHubService
+                    .fetchCardVersion(selectedCommit, cardId);
 
                 if (cardVersion == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Failed to load card version.")),
+                    const SnackBar(
+                        content: Text("Failed to load card version.")),
                   );
                   return;
                 }
@@ -457,7 +463,8 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                           children: [
                             Text(
                               "Card Details",
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 16),
                             Expanded(
@@ -465,25 +472,35 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("ID: ${cardVersion['id']}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text("ID: ${cardVersion['id']}",
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 8),
                                     Text("Title: ${cardVersion['title']}"),
                                     const SizedBox(height: 8),
-                                    Text("Description: ${cardVersion['description']}"),
+                                    Text(
+                                        "Description: ${cardVersion['description']}"),
                                     const SizedBox(height: 8),
                                     Text("Status: ${cardVersion['status']}"),
                                     const SizedBox(height: 8),
-                                    Text("Assignee: ${cardVersion['assignee']}"),
+                                    Text(
+                                        "Assignee: ${cardVersion['assignee']}"),
                                     const SizedBox(height: 8),
-                                    Text("Need Date: ${cardVersion['need_date']}"),
+                                    Text(
+                                        "Need Date: ${cardVersion['need_date']}"),
                                     const SizedBox(height: 8),
-                                    Text("Blocked: ${cardVersion['blocked'] ? 'Yes' : 'No'}"),
+                                    Text(
+                                        "Blocked: ${cardVersion['blocked'] ? 'Yes' : 'No'}"),
                                     const SizedBox(height: 16),
                                     const Text("Files:"),
-                                    ...?cardVersion['files']?.map((file) => Text("- $file")).toList(),
+                                    ...?cardVersion['files']
+                                        ?.map((file) => Text("- $file"))
+                                        .toList(),
                                     const SizedBox(height: 16),
                                     const Text("Branches:"),
-                                    ...?cardVersion['branches']?.map((branch) => Text("- $branch")).toList(),
+                                    ...?cardVersion['branches']
+                                        ?.map((branch) => Text("- $branch"))
+                                        .toList(),
                                   ],
                                 ),
                               ),
@@ -493,11 +510,13 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 TextButton(
-                                  onPressed: () => Navigator.of(context).pop("import"),
+                                  onPressed: () =>
+                                      Navigator.of(context).pop("import"),
                                   child: const Text("Import"),
                                 ),
                                 TextButton(
-                                  onPressed: () => Navigator.of(context).pop("cancel"),
+                                  onPressed: () =>
+                                      Navigator.of(context).pop("cancel"),
                                   child: const Text("Cancel"),
                                 ),
                               ],
@@ -510,17 +529,18 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                 );
 
                 if (action == "import") {
+                  if (mounted)
                   setState(() {
                     widget.card!.updateFromJson(cardVersion);
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Card version imported successfully.")),
+                    SnackBar(
+                        content: Text("Card version imported successfully.")),
                   );
                 } else {
                   print("Import canceled.");
                 }
               }
-
             } catch (e) {
               print("Error fetching card history: $e");
               ScaffoldMessenger.of(context).showSnackBar(
@@ -529,27 +549,20 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
             }
           },
         ),
-        PopupMenuButton<String>(
-          onSelected: (value) async {
-            if (value == 'Move') {
-              // Open move dialog
-              await _showMoveCardDialog(context, widget.card!);
-            } else if (value == 'Archive') {
-              // Archive card
-              await _archiveCard(widget.card!);
-            }
+        IconButton(
+          icon: const Icon(Icons.move_up_sharp),
+          onPressed: () async {
+            await _showMoveCardDialog(context, widget.card!);
           },
-          itemBuilder: (context) => [
-            const PopupMenuItem(value: 'Move', child: Text('Move to Board')),
-            const PopupMenuItem(value: 'Archive', child: Text('Archive')),
-          ],
         ),
-
       ],
     );
   }
+
   Future<void> _archiveCard(KanbanCard card) async {
-    final archives = await SingletonData().gitHubService.listArchiveBoards(); // Fetch all archive boards
+    final archives = await SingletonData()
+        .gitHubService
+        .listArchiveBoards(); // Fetch all archive boards
     final selectedArchive = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -571,16 +584,19 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       },
     );
 
-    final archiveBoardName = selectedArchive ?? "Archive_${DateTime.now().millisecondsSinceEpoch}";
-    await archiveCard(card, SingletonData().kanbanBoard.name, archiveBoardName: archiveBoardName);
+    //final archiveBoardName = selectedArchive ?? "Archive_${DateTime.now().millisecondsSinceEpoch}";
+    //await archiveCard(card, SingletonData().kanbanBoard.name, archiveBoardName: archiveBoardName);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Card archived to $archiveBoardName')),
-    );
+    //ScaffoldMessenger.of(context).showSnackBar(
+    //  SnackBar(content: Text('Card archived to $archiveBoardName')),
+    //);
   }
 
-  Future<void> _showMoveCardDialog(BuildContext context, KanbanCard card) async {
-    final boards = await SingletonData().gitHubService.listKanbanBoards(); // Fetch all active boards
+  Future<void> _showMoveCardDialog(
+      BuildContext context, KanbanCard card) async {
+    final boards = await SingletonData()
+        .gitHubService
+        .listKanbanBoards(); // Fetch all active boards
     final selectedBoard = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -597,10 +613,10 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     );
 
     if (selectedBoard != null) {
-      await moveCardToBoard(card,selectedBoard);
+      await moveCardToBoard(card, selectedBoard);
       SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(content: Text('Card moved to $selectedBoard')),
-      );
+            SnackBar(content: Text('Card moved to $selectedBoard')),
+          );
     }
   }
 
