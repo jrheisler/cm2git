@@ -38,12 +38,19 @@ class SingletonData {
   DateTime dueDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
 
+
+  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
   // Callback for setState
   VoidCallback? kanbanCardDialogSetState;
-  final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   /// Register a callback for setState
   void registerSetStateCallback(VoidCallback callback) {
     kanbanCardDialogSetState = callback;
+  }
+
+  VoidCallback? reportSetState;
+  void registerReportSetStateCallback(VoidCallback callback) {
+    reportSetState = callback;
   }
 
   VoidCallback? appFrameSetState;
@@ -67,6 +74,42 @@ class SingletonData {
         .toList();
   }
 
+  int blockedCards() {
+    return SingletonData()
+        .kanbanBoard
+        .columns
+        .expand((column) => column.cards)
+        .where((card) => card.blocked)
+        .length;
+  }
+
+  List<String> reasonBlockedCards() {
+    return SingletonData()
+        .kanbanBoard
+        .columns
+        .expand((column) => column.cards)
+        .where((card) => card.blocked)
+        .map((card) => card.blockReason)
+        .toList();
+  }
+  List<KanbanCard> unAssignedCards() {
+    return SingletonData()
+        .kanbanBoard
+        .columns
+        .expand((column) => column.cards)
+        .where((card) => card.assignee.isEmpty)
+        .toList();
+  }
+  int unAssignedCardsCount() {
+    return SingletonData()
+        .kanbanBoard
+        .columns
+        .expand((column) => column.cards)
+        .where((card) => card.assignee.isEmpty)
+        .length;
+  }
+
+
   late GitHubService gitHubService;
   bool move = false;
   VoidCallback? _calendarUpdateCallback;
@@ -82,11 +125,13 @@ class SingletonData {
   // Save indicator
   bool isSaveNeeded = false;
 
+
   // Methods to manage save state
   void markSaveNeeded() {
     isSaveNeeded = true;
     kanbanViewSetState?.call(); // Trigger setState in KanbanCardDialog
     appFrameSetState?.call();
+    reportSetState?.call();
     triggerCalendarUpdate();
   }
 
@@ -178,47 +223,6 @@ class SingletonData {
     };
   }
 }
-
-// Example Usage
-
-/*
-void main() {
-  // Access the singleton instance
-  SingletonData data = SingletonData();
-
-  // Populate with mock all-in-one JSON
-  data.allInOneJson = {
-    "name": "Master Kanban",
-    "columns": [
-      {
-        "id": 1,
-        "name": "Product Backlog",
-        "cards": [
-          {
-            "id": 123,
-            "title": "Sample Task",
-            "description": "This is a sample task",
-            "status": "Backlog",
-          }
-        ],
-        "maxCards": 20
-      }
-    ]
-  };
-
-  // Split the JSON into modular files
-  Map<String, String> modularFiles = data.splitAllInOneJson();
-  print("Modular Files:");
-  print(modularFiles);
-
-  // Reconstruct the all-in-one JSON
-  data.reconstructAllInOneJson(modularFiles);
-  print("Reconstructed All-In-One JSON:");
-  print(data.allInOneJson);
-}
-*/
-
-//example usage
 
 SingletonData setSingles() {
   // Access the singleton instance

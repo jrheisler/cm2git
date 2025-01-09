@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import '../common/constants.dart';
-import '../main.dart';
 import '../services/download_file.dart';
 
 class GitLogDialog extends StatefulWidget {
@@ -44,68 +42,204 @@ class _GitLogDialogState extends State<GitLogDialog> {
     );
 
     if (response.statusCode == 200) {
-      if (mounted)
-      setState(() {
-        _commits = json.decode(response.body);
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _commits = json.decode(response.body);
+          _isLoading = false;
+        });
+      }
     } else {
-      if (mounted)
-      setState(() {
-        _isLoading = false;  // handle error state appropriately
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Handle error state appropriately
+        });
+      }
       print('Failed to fetch commits: ${response.statusCode}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Git Log for ${widget.githubRepo}'),
-      content: _isLoading
-          ? const CircularProgressIndicator()
-          : SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _commits.map<Widget>((commit) => Container(
-            decoration: simpleBoxDec(singletonData.kPrimaryColor),
-            child: ListTile(
-              title: Text(
-                "${commit['commit']['author']['name']} - ${commit['commit']['author']['date']}\nMessage: ${commit['commit']['message']}\n",
-                style: const TextStyle(fontSize: 12),
+    return Container(constraints: const BoxConstraints(
+      minWidth: 600, // Minimum width for the dialog
+      maxWidth: 800, // Maximum width
+      maxHeight: 460, // Limit the height of the dialog
+    ),
+      margin: const EdgeInsets.all(4),
+      // Outer margin
+      padding: const EdgeInsets.all(16),
+      // Inner padding
+      decoration: BoxDecoration(
+        color: Colors.deepPurple,
+        borderRadius: BorderRadius.circular(16.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Git Log for ${widget.githubRepo}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _commits.map<Widget>((commit) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurpleAccent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
+                        title: Text(
+                          "${commit['commit']['author']['name']} - ${commit['commit']['author']['date']}\nMessage: ${commit['commit']['message']}\n",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                        hoverColor: Colors.deepPurple.withOpacity(0.8),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
-          )).toList(),
-        ),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    String s = '';
+                    for (var commit in _commits) {
+                      s =
+                      "$s\n${commit['commit']['author']['name']} - ${commit['commit']['author']['date']}\nMessage: ${commit['commit']['message']}\n";
+                    }
+
+                    downloadFile(s, 'GitLog.txt');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.greenAccent,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12.0,
+                      horizontal: 20.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Download',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12.0,
+                      horizontal: 20.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            String s = '';
-            for (var commit in _commits) {
-              s = "$s\n${commit['commit']['author']['name']} - ${commit['commit']['author']['date']}\nMessage: ${commit['commit']['message']}\n";
-            }
-
-            downloadFile(s, 'GitLog.txt');
-
-          },
-          child: const Text('Download'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Close'),
-        ),
-      ],
     );
   }
 }
 
 
-/*
- var projJson = kanbanBoard.toJson();
-    var encoded = jsonEncode(projJson);
 
-    downloadFile(encoded, kanbanBoard.name);
- */
+void showStyledGitLogDialog(BuildContext context, String githubUser, String githubRepo, String githubToken, String githubUrl) {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Git Log',
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Material(
+        color: Colors.transparent,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(
+              minWidth: 600, // Minimum width for the dialog
+              maxWidth: 800, // Maximum width
+              maxHeight: 460, // Limit the height of the dialog
+            ),
+            margin: const EdgeInsets.all(4), // Outer margin
+            padding: const EdgeInsets.all(16), // Inner padding
+            decoration: BoxDecoration(
+              color: Colors.deepPurple,
+              borderRadius: BorderRadius.circular(16.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: GitLogDialog(
+              githubUser: githubUser,
+              githubRepo: githubRepo,
+              githubToken: githubToken,
+              githubUrl: githubUrl,
+            ),
+          ),
+        ),
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 500),
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curvedAnimation = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeInOut,
+      );
+      return FadeTransition(
+        opacity: curvedAnimation,
+        child: ScaleTransition(
+          scale: curvedAnimation,
+          child: child,
+        ),
+      );
+    },
+  );
+}

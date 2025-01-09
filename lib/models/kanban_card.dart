@@ -34,6 +34,7 @@ class KanbanCard {
   List<KanbanDates> dates;
   DateTime needDate;
   bool blocked;
+  String blockReason;
 
   // New property
   bool isModified;
@@ -51,6 +52,7 @@ class KanbanCard {
     this.dates = const [],
     required this.needDate,
     required this.blocked,
+    required this.blockReason,
     this.isModified = false, // Default to false
   });
 
@@ -73,6 +75,7 @@ class KanbanCard {
           ? DateTime.parse(json['need_date'])
           : DateTime.now(),
       blocked: json['blocked'] ?? false,
+      blockReason: json['blockReason'] ?? '',
       isModified: json['isModified'] ?? false, // Initialize from JSON
     );
   }
@@ -91,6 +94,7 @@ class KanbanCard {
       'dates': dates.map((date) => date.toJson()).toList(),
       'need_date': needDate.toIso8601String(),
       'blocked': blocked,
+      'blockReason': blockReason,
       'isModified': isModified, // Include in JSON output
     };
   }

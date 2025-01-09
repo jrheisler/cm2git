@@ -6,13 +6,13 @@ import '../models/kanban_card.dart';
 import '../models/kanban_column.dart';
 
 Future<void> moveCardToBoard(
-    KanbanCard card,
-    String targetBoardName,
-    ) async {
+  KanbanCard card,
+  String targetBoardName,
+) async {
   try {
     // Load target board
     final targetBoard =
-    await SingletonData().gitHubService.fetchBoard(targetBoardName);
+        await SingletonData().gitHubService.fetchBoard(targetBoardName);
 
     // Ensure the target board has a valid structure
     if (targetBoard['columns'] == null || targetBoard['columns'].isEmpty) {
@@ -24,9 +24,9 @@ Future<void> moveCardToBoard(
 
     // Save the target board
     await SingletonData().gitHubService.saveBoard(
-      targetBoard,
-      message: "Added card ${card.id} to $targetBoardName",
-    );
+          targetBoard,
+          message: "Added card ${card.id} to $targetBoardName",
+        );
 
     // Remove card from source board only after successfully adding it to the target board
     for (var column in SingletonData().kanbanBoard.columns) {
@@ -35,31 +35,41 @@ Future<void> moveCardToBoard(
 
     // Save source board
     await SingletonData().gitHubService.saveBoard(
-      SingletonData().kanbanBoard.toJson(),
-      message:
-      "Removed card ${card.id} from ${SingletonData().kanbanBoard.name}",
-    );
+          SingletonData().kanbanBoard.toJson(),
+          message:
+              "Removed card ${card.id} from ${SingletonData().kanbanBoard.name}",
+        );
 
     // Notify the user
-    SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(content: Text("Moved card ${card.id} to $targetBoardName")),
-    );
+    SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(
+          content: Text(
+            "Moved card ${card.id} to $targetBoardName",
+            style: TextStyle(color: Colors.white),
+          ),
+          duration: const Duration(milliseconds: 750),
+        ));
 
     // Refresh the Kanban view
     SingletonData().kanbanViewSetState?.call();
   } catch (e) {
     print("Error moving card ${card.id} to $targetBoardName: $e");
     SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(content: Text("Failed to move card: $e")),
-    );
+          SnackBar(
+            content: Text(
+              "Failed to move card: $e",
+              style: TextStyle(color: Colors.white),
+            ),
+            duration: const Duration(milliseconds: 750),
+          ),
+        );
   }
 }
 
 Future<void> archiveCard(
-    KanbanCard card,
-    String sourceBoardName, {
-      String? archiveBoardName,
-    }) async {
+  KanbanCard card,
+  String sourceBoardName, {
+  String? archiveBoardName,
+}) async {
   try {
     final targetArchiveBoardName =
         archiveBoardName ?? "Archive_${DateTime.now().millisecondsSinceEpoch}";
@@ -91,9 +101,9 @@ Future<void> archiveCard(
 
       // Save the new archive board
       await SingletonData().gitHubService.saveBoard(
-        archiveBoard.toJson(),
-        message: "Created new archive board: $targetArchiveBoardName",
-      );
+            archiveBoard.toJson(),
+            message: "Created new archive board: $targetArchiveBoardName",
+          );
     }
 
     // Add card to the archive board
@@ -101,9 +111,9 @@ Future<void> archiveCard(
 
     // Save the updated archive board
     await SingletonData().gitHubService.saveBoard(
-      archiveBoard.toJson(),
-      message: "Archived card ${card.id} to $targetArchiveBoardName",
-    );
+          archiveBoard.toJson(),
+          message: "Archived card ${card.id} to $targetArchiveBoardName",
+        );
 
     // Remove card from source board only after successfully archiving
     for (var column in SingletonData().kanbanBoard.columns) {
@@ -112,31 +122,40 @@ Future<void> archiveCard(
 
     // Save the updated source board
     await SingletonData().gitHubService.saveBoard(
-      SingletonData().kanbanBoard.toJson(),
-      message:
-      "Removed card ${card.id} from ${SingletonData().kanbanBoard.name}",
-    );
+          SingletonData().kanbanBoard.toJson(),
+          message:
+              "Removed card ${card.id} from ${SingletonData().kanbanBoard.name}",
+        );
 
     // Notify the user
     SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(content: Text("Archived card ${card.id} successfully")),
-    );
+          SnackBar(
+            content: Text(
+              "Archived card ${card.id} successfully",
+              style: TextStyle(color: Colors.white),
+            ),
+            duration: const Duration(milliseconds: 750),
+          ),
+        );
 
     // Refresh the Kanban view
     SingletonData().kanbanViewSetState?.call();
   } catch (e) {
     print("Error archiving card ${card.id}: $e");
     SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(content: Text("Failed to archive card: $e")),
-    );
+          SnackBar(
+            content: Text(
+              "Failed to archive card: $e",
+              style: TextStyle(color: Colors.white),
+            ),
+            duration: const Duration(milliseconds: 750),
+          ),
+        );
   }
 }
-
 
 bool isSameDay(DateTime date1, DateTime date2) {
   return date1.year == date2.year &&
       date1.month == date2.month &&
       date1.day == date2.day;
 }
-
-

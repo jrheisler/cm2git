@@ -34,6 +34,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
   late TextEditingController _descriptionController;
   late TextEditingController _assigneeController;
   late TextEditingController _needDateController;
+  late TextEditingController _blockReasonController;
   bool _blocked = false;
 
   @override
@@ -43,6 +44,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       if (mounted)
       setState(() {}); // Trigger a rebuild when the callback is invoked
     });
+    _blockReasonController = TextEditingController(text: widget.card?.blockReason ?? '');
     _titleController = TextEditingController(text: widget.card?.title ?? '');
     _descriptionController =
         TextEditingController(text: widget.card?.description ?? '');
@@ -283,6 +285,12 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
                   });
                 },
               ),
+              TextField(
+                controller: _blockReasonController,
+                decoration: const InputDecoration(labelText: 'Blocked Reason'),
+                maxLines: 10,
+              ),
+              const SizedBox(height: 20),
               widget.card != null
                   ? Text(
                       'Create Date: ${convertMilliToDateTime(widget.card!.id)}')
@@ -335,7 +343,8 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
               sha: widget.card?.sha ?? '',
               dates: widget.card?.dates ?? [],
               needDate: DateTime.parse(_needDateController.text),
-              blocked: _blocked, // Add the blocked field
+              blocked: _blocked,
+              blockReason: _blockReasonController.text, // Add the blocked field
             );
             widget.onSave(card);
             Navigator.of(context).pop();
@@ -345,6 +354,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
         IconButton(
           icon: const Icon(Icons.delete),
           onPressed: widget.onDelete,
+          tooltip: 'Delete This Card',
         ),
         IconButton(
           icon: const Icon(Icons.history),
@@ -554,6 +564,7 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
           onPressed: () async {
             await _showMoveCardDialog(context, widget.card!);
           },
+          tooltip: 'Move This Card to Another Kanban',
         ),
       ],
     );
@@ -584,12 +595,6 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
       },
     );
 
-    //final archiveBoardName = selectedArchive ?? "Archive_${DateTime.now().millisecondsSinceEpoch}";
-    //await archiveCard(card, SingletonData().kanbanBoard.name, archiveBoardName: archiveBoardName);
-
-    //ScaffoldMessenger.of(context).showSnackBar(
-    //  SnackBar(content: Text('Card archived to $archiveBoardName')),
-    //);
   }
 
   Future<void> _showMoveCardDialog(
@@ -615,7 +620,8 @@ class _KanbanCardDialogState extends State<KanbanCardDialog> {
     if (selectedBoard != null) {
       await moveCardToBoard(card, selectedBoard);
       SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-            SnackBar(content: Text('Card moved to $selectedBoard')),
+            SnackBar(content: Text('Card moved to $selectedBoard', style: TextStyle(color: Colors.white),),
+              duration: const Duration(milliseconds: 750),),
           );
     }
   }

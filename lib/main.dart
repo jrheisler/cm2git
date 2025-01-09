@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     singletonData = setSingles();
-    singletonData.version = '.255';
+    singletonData.version = '.940';
 
     return MaterialApp(
       scaffoldMessengerKey: SingletonData().scaffoldMessengerKey,

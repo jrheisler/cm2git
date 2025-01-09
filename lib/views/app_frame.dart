@@ -57,39 +57,77 @@ class _AppFrameState extends State<AppFrame> {
   Widget build(BuildContext context) {
     print('-----------------------build app frame');
     return Scaffold(
-      body: Row(
-        children: [
-          // Left-hand column
-          SizedBox(
-            width: 300,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Column(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: SingleChildScrollView(
-                      child: CalendarWidget(),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Check if the screen width is less than 800
+          final isSmallScreen = constraints.maxWidth < 800;
+
+          if (isSmallScreen) {
+            // Render in a column for small screens
+            return Column(
+              children: [
+                // Calendar and Reports (Stacked)
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: SingleChildScrollView(
+                          child: CalendarWidget(),
+                        ),
+                      ),
+                      const Divider(color: Colors.deepPurple),
+                      const Expanded(
+                        flex: 3,
+                        child: ReportsPage(),
+                      ),
+                    ],
+                  ),
+                ),
+                // Kanban or List (Takes up remaining space)
+                const Expanded(
+                  flex: 5,
+                  child: KanbanBoardScreen(),
+                ),
+              ],
+            );
+          } else {
+            // Render in a row for larger screens
+            return Row(
+              children: [
+                // Left-hand column
+                SizedBox(
+                  width: 300,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: SingleChildScrollView(
+                            child: CalendarWidget(),
+                          ),
+                        ),
+                        const Divider(color: Colors.deepPurple),
+                        const Expanded(
+                          flex: 3,
+                          child: ReportsPage(),
+                        ),
+                      ],
                     ),
                   ),
-                  const Divider(color: Colors.deepPurple,),
-                  const Expanded(
-                    flex: 3,
-                    child: ReportsPage(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Main content area
-          const Expanded(
-            child: KanbanBoardScreen(),
-          ),
-        ],
+                ),
+                // Main content area
+                const Expanded(
+                  child: KanbanBoardScreen(),
+                ),
+              ],
+            );
+          }
+        },
       ),
     );
-
-
-
   }
+
 }

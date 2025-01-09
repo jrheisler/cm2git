@@ -213,7 +213,8 @@ Future<String?> showKanbanBoardSelector(
                                       print("Board version loaded successfully.");
                                       SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
                                         SnackBar(
-                                          content: Text("Board updated to commit: $selectedCommit"),
+                                          content: Text("Board updated to commit: $selectedCommit", style: TextStyle(color: Colors.white),),
+                                          duration: const Duration(milliseconds: 750),
                                         ),
                                       );
                                     } else {
@@ -223,7 +224,8 @@ Future<String?> showKanbanBoardSelector(
                                     print("Error fetching board version: $e");
                                     SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
                                       SnackBar(
-                                        content: Text("Error loading board version: $e"),
+                                        content: Text("Error loading board version: $e", style: TextStyle(color: Colors.white),),
+                                        duration: const Duration(milliseconds: 750),
                                       ),
                                     );
                                   }
@@ -232,7 +234,8 @@ Future<String?> showKanbanBoardSelector(
                             } catch (e) {
                               print("Error fetching board history: $e");
                               SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-                                SnackBar(content: Text("Error fetching history: $e")),
+                                SnackBar(content: Text("Error fetching history: $e", style: TextStyle(color: Colors.white),),
+                                duration: const Duration(milliseconds: 750),),
                               );
                             }
                           },
@@ -255,34 +258,3 @@ Future<String?> showKanbanBoardSelector(
     },
   );
 }
-
-/*
-Future<String?> showKanbanBoardSelector(
-    BuildContext context, GitHubService githubService) async {
-  final boards = await githubService.listKanbanBoards(); // Fetch list of boards
-  return showDialog<String>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Select Kanban Board"),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: boards.map((board) {
-              return ListTile(
-                title: Text(board),
-                onTap: () => Navigator.of(context).pop(board),
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Cancel"),
-          ),
-        ],
-      );
-    },
-  );
-}*/

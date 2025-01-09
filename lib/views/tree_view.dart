@@ -242,7 +242,8 @@ class _GitHubFileTreeState extends State<GitHubFileTree> {
                 if (_fileContent.isNotEmpty) {
                   Clipboard.setData(ClipboardData(text: _fileContent));
                   SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-                    const SnackBar(content: Text('Content copied to clipboard!')),
+                    const SnackBar(content: Text('Content copied to clipboard!',style: TextStyle(color: Colors.white), ),
+                      duration: const Duration(milliseconds: 750),),
                   );
                 }
               },

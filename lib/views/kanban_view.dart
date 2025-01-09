@@ -23,7 +23,9 @@ import 'delete_dialog.dart';
 import 'git_log.dart';
 import 'git_workflow_screen.dart';
 import 'github_stats_dialog.dart';
+import 'grid_view_screen.dart';
 import 'kanban_card_dialog.dart';
+import 'kanban_card_widget.dart';
 import 'kanban_column_dialog.dart';
 
 class KanbanBoardScreen extends StatefulWidget {
@@ -54,10 +56,11 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
   void initState() {
     kanbanBoard = SingletonData().kanbanBoard;
     SingletonData().registerkanbanViewSetState(() {
-      if (mounted)
-      setState(() {
-        print('set state kanban view');
-      }); // Trigger a rebuild when the callback is invoked
+      if (mounted) {
+        setState(() {
+          print('set state kanban view');
+        }); // Trigger a rebuild when the callback is invoked
+      }
     });
     _refreshFiles();
 
@@ -74,8 +77,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
       } catch (e) {
         kanbanBoard = KanbanBoard.fromData();
       }
-      if (mounted)
-      setState(() {});
+      if (mounted) setState(() {});
     } catch (e) {
       print('Error parsing JSON: $e');
     }
@@ -92,74 +94,20 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
             Navigator.of(context).pop();
           },
           onSave: (card) {
-            if (mounted)
-            setState(() {
-              kanbanBoard.columns
-                  .firstWhere((column) => column.name == columnName)
-                  .cards
-                  .add(card);
-              card.dates
-                  .add(KanbanDates(date: DateTime.now(), status: card.status));
-              LocalStorageHelper.saveValue(
-                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              card.isModified = true;
-              SingletonData().markSaveNeeded();
-            });
-          },
-        );
-      },
-    );
-  }
-
-  void _editCard(KanbanCard card) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return KanbanCardDialog(
-          kanban: kanbanBoard,
-          card: card,
-          columnName: card.status,
-          onDelete: () async {
-            await showDeleteDialog(context, () {
-              for (var col in kanbanBoard.columns) {
-                col.cards.remove(card);
-              }
-              LocalStorageHelper.saveValue(
-                'kanban_board',
-                jsonEncode(kanbanBoard.toJson()),
-              );
-              card.isModified = true;
-
-              SingletonData().markSaveNeeded();
-              Navigator.of(context).pop();
-            });
-            if (mounted)
-            setState(() {});
-          },
-          onSave: (updatedCard) {
-            if (mounted)
-            setState(() {
-              var column = kanbanBoard.columns
-                  .firstWhere((column) => column.name == updatedCard.status);
-
-              // Find the index of the card to be updated
-              int index =
-                  column.cards.indexWhere((c) => c.id == updatedCard.id);
-
-              if (index != -1) {
-                // Remove the card from the list
-                column.cards.removeAt(index);
-
-                // Insert the updated card back at the same index
-                column.cards.insert(index, updatedCard);
-              }
-              LocalStorageHelper.saveValue(
-                'kanban_board',
-                jsonEncode(kanbanBoard.toJson()),
-              );
-              updatedCard.isModified = true;
-              SingletonData().markSaveNeeded();
-            });
+            if (mounted) {
+              setState(() {
+                kanbanBoard.columns
+                    .firstWhere((column) => column.name == columnName)
+                    .cards
+                    .add(card);
+                card.dates.add(
+                    KanbanDates(date: DateTime.now(), status: card.status));
+                LocalStorageHelper.saveValue(
+                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                card.isModified = true;
+                SingletonData().markSaveNeeded();
+              });
+            }
           },
         );
       },
@@ -172,26 +120,28 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
       builder: (context) {
         return KanbanColumnDialog(
           onSave: (column) {
-            if (mounted)
-            setState(() {
-              print(179);
-              kanbanBoard.columns.add(column);
-              print(181);
-              LocalStorageHelper.saveValue(
-                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              print(184);
-              SingletonData().markSaveNeeded();
-              print(186);
-            });
+            if (mounted) {
+              setState(() {
+                print(179);
+                kanbanBoard.columns.add(column);
+                print(181);
+                LocalStorageHelper.saveValue(
+                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                print(184);
+                SingletonData().markSaveNeeded();
+                print(186);
+              });
+            }
           },
           onDelete: (deletedColumn) {
-            if (mounted)
-            setState(() {
-              kanbanBoard.columns.remove(deletedColumn);
-              LocalStorageHelper.saveValue(
-                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              SingletonData().markSaveNeeded();
-            });
+            if (mounted) {
+              setState(() {
+                kanbanBoard.columns.remove(deletedColumn);
+                LocalStorageHelper.saveValue(
+                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                SingletonData().markSaveNeeded();
+              });
+            }
           },
         );
       },
@@ -205,23 +155,25 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
         return KanbanColumnDialog(
           column: column,
           onSave: (updatedColumn) {
-            if (mounted)
-            setState(() {
-              int index = kanbanBoard.columns.indexOf(column);
-              kanbanBoard.columns[index] = updatedColumn;
-              LocalStorageHelper.saveValue(
-                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              SingletonData().markSaveNeeded();
-            });
+            if (mounted) {
+              setState(() {
+                int index = kanbanBoard.columns.indexOf(column);
+                kanbanBoard.columns[index] = updatedColumn;
+                LocalStorageHelper.saveValue(
+                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                SingletonData().markSaveNeeded();
+              });
+            }
           },
           onDelete: (deletedColumn) {
-            if (mounted)
-            setState(() {
-              kanbanBoard.columns.remove(deletedColumn);
-              LocalStorageHelper.saveValue(
-                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
-              SingletonData().markSaveNeeded();
-            });
+            if (mounted) {
+              setState(() {
+                kanbanBoard.columns.remove(deletedColumn);
+                LocalStorageHelper.saveValue(
+                    'kanban_board', jsonEncode(kanbanBoard.toJson()));
+                SingletonData().markSaveNeeded();
+              });
+            }
           },
         );
       },
@@ -230,53 +182,57 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
 
   void _onCardDropped(KanbanCard card, KanbanColumn targetColumn) {
     if (targetColumn.cards.length < targetColumn.maxCards) {
-      if (mounted)
-      setState(() {
-        // Remove the card from its original column
-        for (var column in kanbanBoard.columns) {
-          column.cards.removeWhere((c) => c.id == card.id);
-        }
+      if (mounted) {
+        setState(() {
+          // Remove the card from its original column
+          for (var column in kanbanBoard.columns) {
+            column.cards.removeWhere((c) => c.id == card.id);
+          }
 
-        final newCard = KanbanCard(
-          id: card.id ?? DateTime.now().millisecondsSinceEpoch,
-          title: card.title,
-          description: card.description,
-          assignee: card.assignee,
-          status: targetColumn.name,
-          files: card.files ?? [],
-          sha: card.sha ?? '',
-          dates: card.dates,
-          needDate: card.needDate,
-          blocked: card.blocked,
-          isModified: true,
-        );
+          final newCard = KanbanCard(
+            id: card.id ?? DateTime.now().millisecondsSinceEpoch,
+            title: card.title,
+            description: card.description,
+            assignee: card.assignee,
+            status: targetColumn.name,
+            files: card.files ?? [],
+            sha: card.sha ?? '',
+            dates: card.dates,
+            needDate: card.needDate,
+            blocked: card.blocked,
+            isModified: true,
+            blockReason: '',
+          );
 
-        KanbanDates kd =
-            KanbanDates(date: DateTime.now(), status: targetColumn.name);
-        newCard.dates.add(kd);
+          KanbanDates kd =
+              KanbanDates(date: DateTime.now(), status: targetColumn.name);
+          newCard.dates.add(kd);
 
-        // Add the card to the new column
-        targetColumn.cards.add(newCard);
-        LocalStorageHelper.saveValue(
-            'kanban_board', jsonEncode(kanbanBoard.toJson()));
-        SingletonData().markSaveNeeded();
-      });
+          // Add the card to the new column
+          targetColumn.cards.add(newCard);
+          LocalStorageHelper.saveValue(
+              'kanban_board', jsonEncode(kanbanBoard.toJson()));
+          SingletonData().markSaveNeeded();
+        });
+      }
     } else {
       SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
             const SnackBar(
-                content: Text("You can't add more cards to this column")),
+                content: Text("You can't add more cards to this column", style: TextStyle(color: Colors.white),),
+              duration: const Duration(milliseconds: 750),),
           );
     }
   }
 
   void _deleteColumn(KanbanColumn column) {
-    if (mounted)
-    setState(() {
-      kanbanBoard.columns.removeWhere((col) => col.id == column.id);
-      LocalStorageHelper.saveValue(
-          'kanban_board', jsonEncode(kanbanBoard.toJson()));
-      SingletonData().markSaveNeeded();
-    });
+    if (mounted) {
+      setState(() {
+        kanbanBoard.columns.removeWhere((col) => col.id == column.id);
+        LocalStorageHelper.saveValue(
+            'kanban_board', jsonEncode(kanbanBoard.toJson()));
+        SingletonData().markSaveNeeded();
+      });
+    }
   }
 
   void _manageColumns() {
@@ -300,38 +256,46 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
       final List<GitPullRequest> pulls =
           await SingletonData().gitHubService.getPullRequests();
       //final List<GitBranch> branches = await _gitHubService.getBranches();
-      if (mounted)
-      setState(() {
-        for (var column in kanbanBoard.columns) {
-          for (var card in column.cards) {
-            card.files = [];
-            for (var commit in commits) {
-              if (commit.commit.message.contains('${card.id}')) {
-                card.files.add(commit.commit);
-                card.sha = commit.sha;
+      if (mounted) {
+        setState(() {
+          for (var column in kanbanBoard.columns) {
+            for (var card in column.cards) {
+              card.files = [];
+              for (var commit in commits) {
+                if (commit.commit.message.contains('${card.id}')) {
+                  card.files.add(commit.commit);
+                  card.sha = commit.sha;
+                }
               }
             }
           }
-        }
 
-        for (var column in kanbanBoard.columns) {
-          for (var card in column.cards) {
-            card.pulls = [];
-            for (var pull in pulls) {
-              if (pull.body.contains('${card.id}')) {
-                card.pulls.add(pull);
-                card.sha = '';
+          for (var column in kanbanBoard.columns) {
+            for (var card in column.cards) {
+              card.pulls = [];
+              for (var pull in pulls) {
+                if (pull.body.contains('${card.id}')) {
+                  card.pulls.add(pull);
+                  card.sha = '';
+                }
               }
             }
           }
-        }
-        SingletonData().clearSaveNeeded();
-        SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-              const SnackBar(content: Text('Refreshed')),
-            );
-        LocalStorageHelper.saveValue(
-            'kanban_board', jsonEncode(kanbanBoard.toJson()));
-      });
+          SingletonData().clearSaveNeeded();
+          SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
+                SnackBar(
+                  backgroundColor: SingletonData().kPrimaryColor,
+                  content: const Text(
+                    'Refreshed',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(milliseconds: 750),
+                ),
+              );
+          LocalStorageHelper.saveValue(
+              'kanban_board', jsonEncode(kanbanBoard.toJson()));
+        });
+      }
     } catch (e) {
       print('Failed to load files: $e');
     }
@@ -351,9 +315,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
             controller: _tabController,
             children: [
               kanbanView(),
-              // Replace with your actual Kanban implementation
-              gridViewScreen(),
-              // Replace with your actual GridView implementation
+              GridViewScreen(),
             ],
           ),
         ),
@@ -380,10 +342,11 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
   }
 
   void _saveToGit() async {
-    if (mounted)
-    setState(() {
-      _isSaving = true; // Show the progress indicator
-    });
+    if (mounted) {
+      setState(() {
+        _isSaving = true; // Show the progress indicator
+      });
+    }
 
     try {
       final currentBoard = SingletonData().kanbanBoard;
@@ -435,10 +398,11 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
                     Text("Committed board and modified cards successfully."),
               ),
             );
-        if (mounted)
-        setState(() {
-          resetCardsNotModified(currentBoard);
-        });
+        if (mounted) {
+          setState(() {
+            resetCardsNotModified(currentBoard);
+          });
+        }
 
         print("Committed board and modified cards successfully.");
       } else {
@@ -452,10 +416,11 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
             ),
           );
     } finally {
-      if (mounted)
-      setState(() {
-        _isSaving = false; // Hide the progress indicator
-      });
+      if (mounted) {
+        setState(() {
+          _isSaving = false; // Hide the progress indicator
+        });
+      }
     }
   }
 
@@ -485,11 +450,12 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
           var json = reader.result;
           kanbanBoard = KanbanBoard.fromJson(jsonDecode(json.toString()));
           SingletonData().kanbanBoard = kanbanBoard;
-          if (mounted)
-          setState(() {
-            LocalStorageHelper.saveValue(
-                'kanban_board', jsonEncode(kanbanBoard.toJson()));
-          });
+          if (mounted) {
+            setState(() {
+              LocalStorageHelper.saveValue(
+                  'kanban_board', jsonEncode(kanbanBoard.toJson()));
+            });
+          }
           SingletonData().clearSaveNeeded();
         });
       },
@@ -510,7 +476,9 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
             i++;
             return Container(
               decoration: newBoxDec(),
-              width: SingletonData().kanbanBoard.columns.length > 1 ? 300: MediaQuery.of(context).size.width - 310,
+              width: SingletonData().kanbanBoard.columns.length > 1
+                  ? 300
+                  : MediaQuery.of(context).size.width - 310,
               margin: const EdgeInsets.all(8),
               child: Column(
                 children: [
@@ -532,7 +500,7 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
                       i == 1
                           ? IconButton(
                               tooltip: 'Add a Card',
-                              icon: const Icon(Icons.add),
+                              icon: const Icon(Icons.add_circle_sharp, color: Colors.green,),
                               onPressed: () {
                                 if (column.maxCards == 0 ||
                                     column.maxCards > column.cards.length) {
@@ -579,23 +547,16 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
                                 feedback: Material(
                                   child: KanbanCardWidget(
                                     card: card,
-                                    onEdit: () {},
                                   ),
                                 ),
                                 childWhenDragging: Container(),
                                 child: KanbanCardWidget(
                                   card: card,
-                                  onEdit: () {
-                                    _editCard(card);
-                                  },
                                 ),
                               );
                             } else {
                               return KanbanCardWidget(
                                 card: card,
-                                onEdit: () {
-                                  _editCard(card);
-                                },
                               );
                             }
                           }).toList(),
@@ -612,63 +573,6 @@ class _KanbanBoardScreenState extends State<KanbanBoardScreen>
     );
   }
 
-  gridViewScreen() {
-    return Center(
-      child: Text(
-        "Grid View Coming Soon!",
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-    );
-  }
-
-
-/*
-showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Git Workflow',
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return Center(
-        child: Container(
-          constraints: const BoxConstraints(
-            minWidth: 600, // Minimum width for the dialog
-            maxWidth: 800, // Maximum width (optional)
-          ),
-          margin: const EdgeInsets.all(20), // 20-pixel border
-          padding: const EdgeInsets.all(16), // Inner padding for content
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          child: GitWorkflowScreen(githubService: gitHubService),
-        ),
-      );
-    },
-    transitionDuration: const Duration(milliseconds: 500),
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final curvedAnimation = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeInOut,
-      );
-      return FadeTransition(
-        opacity: curvedAnimation,
-        child: ScaleTransition(
-          scale: curvedAnimation,
-          child: child,
-        ),
-      );
-    },
-  );
- */
-
-
   void showStyledCIReportsDialog(BuildContext context) {
     showGeneralDialog(
       context: context,
@@ -684,7 +588,7 @@ showGeneralDialog(
             ),
             margin: const EdgeInsets.all(4), // 20-pixel border
             padding: const EdgeInsets.all(4), // Inner padding for content
-            child: CIReportsPage(),
+            child: const CIReportsPage(),
           ),
         );
       },
@@ -703,38 +607,7 @@ showGeneralDialog(
         );
       },
     );
-
-
-
-
-
-   /* showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          contentPadding: EdgeInsets.zero,
-          content: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            width: MediaQuery.of(context).size.width * 0.8, // Adjust width
-            height: 420, //MediaQuery.of(context).size.height * 0.6, // Adjust height
-            child: const CIReportsPage(),
-          ),
-        );
-      },
-    );*/
   }
-
-
 
   AppBar appBar() {
     return AppBar(
@@ -742,16 +615,13 @@ showGeneralDialog(
         onPressed: () async {
           KanbanBoard _kanbanBoard =
               (await showNameDialog(context, kanbanBoard))!;
-          if (_kanbanBoard != null) {
-            if (mounted)
+          if (mounted) {
             setState(() {
               kanbanBoard = _kanbanBoard;
               LocalStorageHelper.saveValue(
                   'kanban_board', jsonEncode(kanbanBoard.toJson()));
               SingletonData().markSaveNeeded();
             });
-          } else {
-            print("Dialog was canceled.");
           }
         },
         child: Text(
@@ -870,10 +740,11 @@ showGeneralDialog(
             child: Checkbox(
                 value: SingletonData().move,
                 onChanged: (b) {
-                  if (mounted)
-                  setState(() {
-                    SingletonData().move = b!;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      SingletonData().move = b!;
+                    });
+                  }
                 }),
           ),
         ),
@@ -883,7 +754,6 @@ showGeneralDialog(
       ],
     );
   }
-
 }
 
 void resetCardsNotModified(KanbanBoard kanbanBoard) {
@@ -959,14 +829,12 @@ class KanbanColumnWidget extends StatelessWidget {
                       opacity: 0.7,
                       child: KanbanCardWidget(
                         card: card,
-                        onEdit: () {},
                       ),
                     ),
                   ),
                   childWhenDragging: Container(),
                   child: KanbanCardWidget(
                     card: card,
-                    onEdit: () => onEditCard(card),
                   ),
                 );
               },
@@ -996,112 +864,6 @@ class KanbanColumnWidget extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class KanbanCardWidget extends StatefulWidget {
-  final KanbanCard card;
-  final VoidCallback onEdit;
-
-  KanbanCardWidget({
-    required this.card,
-    required this.onEdit,
-  });
-
-  @override
-  _KanbanCardWidgetState createState() => _KanbanCardWidgetState();
-}
-
-class _KanbanCardWidgetState extends State<KanbanCardWidget> {
-  bool _isHovered = false; // To track if the card is hovered (mouse down)
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onEdit,
-      onTapDown: (details) {
-        if (SingletonData().move) {
-          // Only allow hover effect when move is false
-          if (mounted)
-          setState(() {
-            _isHovered = true;
-          });
-        }
-      },
-      onTapUp: (details) {
-        if (SingletonData().move) {
-          if (mounted)
-          setState(() {
-            _isHovered = false;
-          });
-        }
-      },
-      onTapCancel: () {
-        if (SingletonData().move) {
-          if (mounted)
-          setState(() {
-            _isHovered = false;
-          });
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        width: _isHovered ? MediaQuery.of(context).size.width * 0.9 : 300,
-        child: Card(
-          color: widget.card.blocked
-              ? Colors.redAccent
-              : isSameDay(widget.card.needDate, SingletonData().dueDate)
-                  ? Colors.blueGrey
-                  : singletonData.kPrimaryColor,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('ID: ${widget.card.id}'),
-                    IconButton(
-                      icon: const Icon(Icons.copy),
-                      onPressed: () => _copyToClipboard(context),
-                    ),
-                  ],
-                ),
-                Text('Title: ${widget.card.title}'),
-                const Divider(),
-                Text('Description: ${widget.card.description}'),
-                const Divider(),
-                Text('Assignee: ${widget.card.assignee}'),
-                const Divider(),
-                Text('Status: ${widget.card.status}'),
-                const Divider(),
-                Text('Create Date: ${convertMilliToDateTime(widget.card.id)}'),
-                const Divider(),
-                widget.card.needDate!.isBefore(DateTime.now())
-                    ? Text(
-                        'Need Date: ${DateFormat('yyyy-MM-dd').format(widget.card.needDate!)}',
-                        style: widget.card.blocked
-                            ? const TextStyle(color: Colors.black)
-                            : const TextStyle(color: Colors.redAccent),
-                      )
-                    : Text(
-                        'Need Date: ${DateFormat('yyyy-MM-dd').format(widget.card.needDate!)}'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _copyToClipboard(BuildContext context) {
-    final text = 'Card ID: ${widget.card.id}';
-    Clipboard.setData(ClipboardData(text: text));
-    SingletonData().scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text('Copied to clipboard: $text')),
-        );
   }
 }
 
